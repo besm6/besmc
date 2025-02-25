@@ -24,10 +24,6 @@ struct CompilerOptions {
     #[arg(short = 'c', long = "compile")]
     stop_at_object: bool,
 
-    /// Compile only to assembly files
-    #[arg(short = 'S', long = "assembly")]
-    stop_at_assembly: bool,
-
     /// Input files to process
     #[arg(value_name = "FILES")]
     files: Vec<String>,
@@ -35,8 +31,14 @@ struct CompilerOptions {
 
 #[derive(Debug, Default, PartialEq)]
 struct FileGroups {
-    c_files: Vec<String>,
-    asm_files: Vec<String>,
+    ftn_files: Vec<String>,
+    fortran_files: Vec<String>,
+    forex_files: Vec<String>,
+    algol_files: Vec<String>,
+    pascal_files: Vec<String>,
+    assem_files: Vec<String>,
+    madlen_files: Vec<String>,
+    bemsh_files: Vec<String>,
     obj_files: Vec<String>,
 }
 
@@ -49,9 +51,16 @@ impl CompilerOptions {
             let path = Path::new(file);
             if let Some(ext) = path.extension() {
                 match ext.to_string_lossy().as_ref() {
-                    "c" => groups.c_files.push(file.clone()),
-                    "s" => groups.asm_files.push(file.clone()),
-                    "o" => groups.obj_files.push(file.clone()),
+                    "ftn"     => groups.ftn_files.push(file.clone()),
+                    "fortran" => groups.fortran_files.push(file.clone()),
+                    "forex"   => groups.forex_files.push(file.clone()),
+                    "algol"   => groups.algol_files.push(file.clone()),
+                    "pascal"  => groups.pascal_files.push(file.clone()),
+                    "assem"   => groups.assem_files.push(file.clone()),
+                    "madlen"  => groups.madlen_files.push(file.clone()),
+                    "bemsh"   => groups.bemsh_files.push(file.clone()),
+                    "obj"     => groups.obj_files.push(file.clone()),
+                    "exe"     => panic!("Cannot process executable file: {}", file),
                     _ => panic!("Cannot process file with unknown extension: {}", file),
                 }
             } else {
@@ -64,9 +73,10 @@ impl CompilerOptions {
 
     // Validate options
     fn validate(&self) {
-        if self.stop_at_object && self.stop_at_assembly {
-            panic!("Options -c and -S cannot be used together");
-        }
+        //TODO
+        //if self.stop_at_object && self.stop_at_assembly {
+        //    panic!("Options -c and -S cannot be used together");
+        //}
     }
 }
 

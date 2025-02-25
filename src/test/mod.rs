@@ -25,36 +25,30 @@ fn parse_and_process(args: Vec<&str>) -> Result<(CompilerOptions, FileGroups), S
 }
 
 #[test]
-fn test_output_and_c_files() {
-    let args = vec!["besmc", "-o", "out", "test.c", "main.c"];
+fn test_output_and_ftn_files() {
+    let args = vec!["besmc", "-o", "out", "test.ftn", "main.ftn"];
     let result = parse_and_process(args);
 
     match result {
         Ok((options, file_groups)) => {
             assert_eq!(options.output_file, Some("out".to_string()));
             assert_eq!(options.stop_at_object, false);
-            assert_eq!(options.stop_at_assembly, false);
             assert_eq!(
                 file_groups,
                 FileGroups {
-                    c_files: vec!["test.c".to_string(), "main.c".to_string()],
-                    asm_files: vec![],
+                    ftn_files: vec!["test.ftn".to_string(), "main.ftn".to_string()],
+                    fortran_files: vec![],
+                    forex_files: vec![],
+                    algol_files: vec![],
+                    pascal_files: vec![],
+                    assem_files: vec![],
+                    madlen_files: vec![],
+                    bemsh_files: vec![],
                     obj_files: vec![],
                 }
             );
         }
         Err(msg) => panic!("Unexpected panic: {}", msg),
-    }
-}
-
-#[test]
-fn test_conflicting_flags() {
-    let args = vec!["besmc", "-c", "-S", "test.c"];
-    let result = parse_and_process(args);
-
-    match result {
-        Ok(_) => panic!("Expected panic due to conflicting flags"),
-        Err(msg) => assert_eq!(msg, "Options -c and -S cannot be used together"),
     }
 }
 
@@ -71,20 +65,25 @@ fn test_unknown_extension() {
 
 #[test]
 fn test_mixed_file_types() {
-    let args = vec!["besmc", "-c", "src.c", "code.s", "obj.o"];
+    let args = vec!["besmc", "-c", "src.ftn", "code.assem", "obj.obj"];
     let result = parse_and_process(args);
 
     match result {
         Ok((options, file_groups)) => {
             assert_eq!(options.output_file, None);
             assert_eq!(options.stop_at_object, true);
-            assert_eq!(options.stop_at_assembly, false);
             assert_eq!(
                 file_groups,
                 FileGroups {
-                    c_files: vec!["src.c".to_string()],
-                    asm_files: vec!["code.s".to_string()],
-                    obj_files: vec!["obj.o".to_string()],
+                    ftn_files: vec!["src.ftn".to_string()],
+                    fortran_files: vec![],
+                    forex_files: vec![],
+                    algol_files: vec![],
+                    pascal_files: vec![],
+                    assem_files: vec!["code.assem".to_string()],
+                    madlen_files: vec![],
+                    bemsh_files: vec![],
+                    obj_files: vec!["obj.obj".to_string()],
                 }
             );
         }

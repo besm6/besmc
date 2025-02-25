@@ -2,13 +2,16 @@ use clap::Parser;
 use std::path::Path;
 use std::panic;
 
+mod compiler;
+use compiler::compile_files;
+
 #[cfg(test)]
 mod test;
 
 // Data structure to hold all parsed compiler options and files
 #[derive(Debug, Parser)]
 #[command(
-    about = "A simple C compiler frontend",
+    about = "BESM-6 compiler frontend",
     disable_help_flag = false,
     arg_required_else_help = true
 )]
@@ -68,6 +71,16 @@ impl CompilerOptions {
 }
 
 fn main() {
+    // Set a custom panic hook
+    panic::set_hook(Box::new(|panic_info| {
+        // Print location of the panic.
+        if let Some(_location) = panic_info.location() {
+            // Uncomment for debug:
+            // println!("Aborted at {}, line {}:", location.file(), location.line());
+        }
+        // Proceed to catch_unwind().
+    }));
+
     // Parse arguments using clap
     let options = CompilerOptions::parse();
 
@@ -80,8 +93,7 @@ fn main() {
         println!("Options: {:#?}", options);
         println!("File Groups: {:#?}", file_groups);
 
-        // Here you’d pass `options` and `file_groups` to compilation logic
-        // e.g., compile_files(options, file_groups);
+        compile_files(&options, &file_groups).expect("Compilation failed");
         ()
     });
 

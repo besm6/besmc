@@ -6,19 +6,6 @@ use std::process::Stdio;
 
 use super::{CompilerOptions, FileGroups};
 
-const HEADER: &str = "*name compile\n\
-                      *disc:1/local\n\
-                      *file:output,60,w\n";
-
-const FOOTER_OBJ: &str = "*to perso: 60\n\
-                          *end file\n";
-
-const FOOTER_EXE: &str = "*library:22\n\
-                          *call overlay\n\
-                          program\n\
-                          *end record\n\
-                          *end file\n";
-
 //
 // Writes the contents of a source file to an already opened destination file.
 //
@@ -74,8 +61,10 @@ pub fn compile_files(options: &CompilerOptions, file_groups: &FileGroups) -> Res
                               .map_err(|e| format!("Failed to create build.dub: {}", e))?;
 
     // Write Dubna script.
-    script.write_all(HEADER.as_bytes())
-          .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+    writeln!(script, "*name compile\n\
+                      *disc:1/local\n\
+                      *file:output,60,w")
+        .map_err(|e| format!("Failed to write build.dub: {}", e))?;
 
     // Write contents of each source file
     copy_files(&script, &file_groups.ftn_files, "*ftn\n")?;
@@ -91,12 +80,18 @@ pub fn compile_files(options: &CompilerOptions, file_groups: &FileGroups) -> Res
     // Write the final step.
     if options.stop_at_object {
         // Save as library of object files.
-        script.write_all(FOOTER_OBJ.as_bytes())
-              .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+        writeln!(script, "*to perso: 60\n\
+                          *end file")
+            .map_err(|e| format!("Failed to write build.dub: {}", e))?;
     } else {
         // Create executable binary (overlay).
-        script.write_all(FOOTER_EXE.as_bytes())
-              .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+        let entry = if file_groups.bemsh_files.is_empty() { "program" } else { "main" };
+        writeln!(script, "*library:22\n\
+                          *call overlay\n\
+                          {}\n\
+                          *end record\n\
+                          *end file", entry)
+            .map_err(|e| format!("Failed to write build.dub: {}", e))?;
     }
 
     // Ensure the file is written to disk
@@ -114,6 +109,8 @@ pub fn compile_files(options: &CompilerOptions, file_groups: &FileGroups) -> Res
                          .stdout(Stdio::from(listing))
                          .status()
                          .map_err(|e| format!("Failed to execute dubna: {}", e))?;
+
+    //TODO: Scan listing and find compilation errors.
 
     if status.success() {
         // Copy output.bin to output_file.

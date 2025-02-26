@@ -1,86 +1,95 @@
-use std::path::Path;
-use std::process::{Command, Stdio};
+use std::process::Command;
+use std::fs::File;
+use std::io::{Read, Write};
 
 use super::{CompilerOptions, FileGroups};
 
-// Runs a command and returns an error message if it fails
-pub(crate) fn run_command(cmd: &mut Command) -> Result<(), String> {
-    let output = cmd
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .output()
-        .map_err(|e| format!("Failed to execute command: {}", e))?;
+// Writes the contents of a source file to an already opened destination file
+fn write_file_contents(mut dest_file: &File, src_filename: &str) -> Result<(), String> {
+    // Open the source file
+    let mut src_file = File::open(src_filename)
+        .map_err(|e| format!("Failed to open source file '{}': {}", src_filename, e))?;
 
-    if output.status.success() {
-        Ok(())
-    } else {
-        Err(format!("Command failed with status: {}", output.status))
-    }
-}
+    // Read the contents of the source file into a string
+    let mut contents = String::new();
+    src_file
+        .read_to_string(&mut contents)
+        .map_err(|e| format!("Failed to read source file '{}': {}", src_filename, e))?;
 
-// Compiles files based on options and file groups
-pub fn compile_files(options: &CompilerOptions, file_groups: &FileGroups) -> Result<(), String> {
-    let output_file = options.output_file.as_deref().unwrap_or("out.exe");
-
-    // If -c is set, compile .ftn to .obj and .assem to .obj, then stop
-    if options.stop_at_object {
-        let mut obj_files = Vec::new();
-        for ftn_file in &file_groups.ftn_files {
-            let stem = Path::new(ftn_file).file_stem().unwrap().to_str().unwrap();
-            let obj_file = format!("{}.obj", stem);
-            println!("Compiling {} to {}", ftn_file, obj_file);
-            run_command(
-                Command::new("dubna")
-                    .args(&["-c", ftn_file, "-o", &obj_file])
-            )?;
-            obj_files.push(obj_file);
-        }
-        for assem_file in &file_groups.assem_files {
-            let stem = Path::new(assem_file).file_stem().unwrap().to_str().unwrap();
-            let obj_file = format!("{}.obj", stem);
-            println!("Assembling {} to {}", assem_file, obj_file);
-            run_command(
-                Command::new("dubna")
-                    .args(&["-c", assem_file, "-o", &obj_file])
-            )?;
-            obj_files.push(obj_file);
-        }
-        return Ok(()); // Stop here
-    }
-
-    // Full compilation: .ftn to .obj and .assem to .obj, then link with existing .obj files
-    let mut obj_files = file_groups.obj_files.clone();
-    for ftn_file in &file_groups.ftn_files {
-        let stem = Path::new(ftn_file).file_stem().unwrap().to_str().unwrap();
-        let obj_file = format!("{}.obj", stem);
-        println!("Compiling {} to {}", ftn_file, obj_file);
-        run_command(
-            Command::new("dubna")
-                .args(&["-c", ftn_file, "-o", &obj_file])
-        )?;
-        obj_files.push(obj_file);
-    }
-    for assem_file in &file_groups.assem_files {
-        let stem = Path::new(assem_file).file_stem().unwrap().to_str().unwrap();
-        let obj_file = format!("{}.obj", stem);
-        println!("Assembling {} to {}", assem_file, obj_file);
-        run_command(
-            Command::new("dubna")
-                .args(&["-c", assem_file, "-o", &obj_file])
-        )?;
-        obj_files.push(obj_file);
-    }
-
-    // Link all object files into the final executable
-    if !obj_files.is_empty() {
-        println!("Linking to {}", output_file);
-        let mut cmd = Command::new("dubna");
-        cmd.arg("-o").arg(output_file);
-        for obj_file in &obj_files {
-            cmd.arg(obj_file);
-        }
-        run_command(&mut cmd)?;
-    }
+    // Write the contents to the destination file
+    dest_file
+        .write_all(contents.as_bytes())
+        .map_err(|e| format!("Failed to write to destination file: {}", e))?;
 
     Ok(())
+}
+
+//
+// Compiles files based on options and file groups.
+// If -c is set, compile .ftn and .assem and everything else to .obj, then stop.
+// Otherwise compile everything, then link into .exe.
+//
+pub fn compile_files(options: &CompilerOptions, file_groups: &FileGroups) -> Result<(), String> {
+    let _output_file = options.output_file.as_deref().unwrap_or("out.exe");
+
+    // Create script for Dubna.
+    let mut script = File::create("build.dub")
+        .map_err(|e| format!("Failed to create build.dub: {}", e))?;
+
+    // Write Dubna script.
+    writeln!(script, "*name hello")
+        .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+    writeln!(script, "*disc:1/local")
+        .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+    writeln!(script, "*file:output,60,w")
+        .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+
+    // Write contents of each source file
+    for src in &file_groups.ftn_files {
+        writeln!(script, "*ftn")
+            .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+        write_file_contents(&script, src)?;
+    }
+    //TODO: fortran
+    //TODO: forex
+    //TODO: algol
+    //TODO: pascal
+    //TODO: assem
+    //TODO: madlen
+    //TODO: bemsh
+    //TODO: obj
+
+    // Write the final step.
+    if options.stop_at_object {
+        // Save as library of object files.
+        writeln!(script, "*to perso: 60")
+            .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+    } else {
+        // Create executable binary (overlay).
+        writeln!(script, "*call overlay")
+            .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+        writeln!(script, "program")
+            .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+        writeln!(script, "*end record")
+            .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+    }
+    writeln!(script, "*end file")
+        .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+
+    // Ensure the file is written to disk
+    script.flush()
+        .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+
+    // Run Dubna.
+    let status = Command::new("dubna")
+        .arg("build.dub")
+        .status()
+        .map_err(|e| format!("Failed to execute dubna: {}", e))?;
+
+    if status.success() {
+        //TODO: copy/rename output.bin as output_file.
+        Ok(())
+    } else {
+        Err(format!("Dubna failed with status: {}", status))
+    }
 }

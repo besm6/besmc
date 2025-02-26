@@ -53,18 +53,25 @@ fn remove_file(filename: &str) -> Result<(), String> {
 // Otherwise compile everything, then link into .exe.
 //
 pub fn compile_files(options: &CompilerOptions, file_groups: &FileGroups) -> Result<(), String> {
-    let output_file = Path::new(&options.files[0]).file_stem().unwrap().to_str().unwrap().to_string() + ".exe";
-    let listing_file = Path::new(&output_file).file_stem().unwrap().to_str().unwrap().to_string() + ".lst";
+
+    // The first source file defines names of output binary and listing.
+    let stem = Path::new(&options.files[0]).file_stem().unwrap().to_str().unwrap().to_string();
+    let output_file = stem.clone() + if options.stop_at_object { ".obj" } else { ".exe" };
+    let listing_file = stem + ".lst";
 
     // Create script for Dubna.
     let mut script = fs::File::create("build.dub")
                               .map_err(|e| format!("Failed to create build.dub: {}", e))?;
-
-    // Write Dubna script.
     writeln!(script, "*name compile\n\
                       *disc:1/local\n\
                       *file:output,60,w")
         .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+
+    // TODO: for each .obj input, create *file:inputN.bin directive.
+    // Copy each .obj file to local inputN.bin file.
+    // Here N=40...59.
+
+    // TODO: for each .obj input, add *perso:N directive.
 
     // Write contents of each source file
     copy_files(&script, &file_groups.ftn_files, "*ftn\n")?;
@@ -75,7 +82,6 @@ pub fn compile_files(options: &CompilerOptions, file_groups: &FileGroups) -> Res
     copy_files(&script, &file_groups.assem_files, "*assem\n")?;
     copy_files(&script, &file_groups.madlen_files, "*madlen\n")?;
     copy_files(&script, &file_groups.bemsh_files, "*bemsh\n")?;
-    //TODO: obj
 
     // Write the final step.
     if options.stop_at_object {
@@ -116,9 +122,12 @@ pub fn compile_files(options: &CompilerOptions, file_groups: &FileGroups) -> Res
         // Copy output.bin to output_file.
         let output = fs::File::create(&output_file)
                               .map_err(|e| format!("Failed to create {}: {}", output_file, e))?;
+
+        //TODO: add she-bang line "#!/usr/bin/env dubna"
         copy_file_contents(&output, "output.bin")?;
         remove_file("output.bin")?;
         remove_file("build.dub")?;
+        //TODO: make output file executable
         Ok(())
     } else {
         Err(format!("Dubna failed with status: {}", status))

@@ -24,8 +24,18 @@ struct CompilerOptions {
     #[arg(short = 'c', long = "compile")]
     stop_at_object: bool,
 
-    /// Input files to process
-    #[arg(value_name = "FILES")]
+    // Input files
+    #[arg(value_name = "FILES",
+          help = "Input sources and object files:\n\
+                 *.ftn     - Fortran-ГДP\n\
+                 *.fortran - Fortran Dubna\n\
+                 *.forex   - Forex\n\
+                 *.algol   - Algol-ГДP\n\
+                 *.pascal  - Pascal\n\
+                 *.assem   - Assembler Madlen\n\
+                 *.madlen  - Assembler Madlen-3.5\n\
+                 *.bemsh   - Assembler БЭМШ\n\
+                 *.obj     - Object Library (*perso)")]
     files: Vec<String>,
 }
 

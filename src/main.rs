@@ -1,6 +1,6 @@
 use clap::Parser;
-use std::path::Path;
 use std::panic;
+use std::path::Path;
 
 mod compiler;
 use compiler::compile_files;
@@ -25,8 +25,9 @@ struct CompilerOptions {
     stop_at_object: bool,
 
     // Input files
-    #[arg(value_name = "FILES",
-          help = "Input sources and object files:\n\
+    #[arg(
+        value_name = "FILES",
+        help = "Input sources and object files:\n\
                  *.ftn     - Fortran-ГДP\n\
                  *.fortran - Fortran Dubna\n\
                  *.forex   - Forex\n\
@@ -34,8 +35,9 @@ struct CompilerOptions {
                  *.pascal  - Pascal\n\
                  *.assem   - Assembler Madlen\n\
                  *.madlen  - Assembler Madlen-3.5\n\
-                 *.bemsh   - Assembler БЭМШ\n\
-                 *.obj     - Object Library (*perso)")]
+                 *.bemsh   - Assembler БЕМШ\n\
+                 *.obj     - Object Library (*perso)"
+    )]
     files: Vec<String>,
 }
 
@@ -61,16 +63,16 @@ impl CompilerOptions {
             let path = Path::new(file);
             if let Some(ext) = path.extension() {
                 match ext.to_string_lossy().as_ref() {
-                    "ftn"     => groups.ftn_files.push(file.clone()),
+                    "ftn" => groups.ftn_files.push(file.clone()),
                     "fortran" => groups.fortran_files.push(file.clone()),
-                    "forex"   => groups.forex_files.push(file.clone()),
-                    "algol"   => groups.algol_files.push(file.clone()),
-                    "pascal"  => groups.pascal_files.push(file.clone()),
-                    "assem"   => groups.assem_files.push(file.clone()),
-                    "madlen"  => groups.madlen_files.push(file.clone()),
-                    "bemsh"   => groups.bemsh_files.push(file.clone()),
-                    "obj"     => groups.obj_files.push(file.clone()),
-                    "exe"     => panic!("Cannot process executable file: {}", file),
+                    "forex" => groups.forex_files.push(file.clone()),
+                    "algol" => groups.algol_files.push(file.clone()),
+                    "pascal" => groups.pascal_files.push(file.clone()),
+                    "assem" => groups.assem_files.push(file.clone()),
+                    "madlen" => groups.madlen_files.push(file.clone()),
+                    "bemsh" => groups.bemsh_files.push(file.clone()),
+                    "obj" => groups.obj_files.push(file.clone()),
+                    "exe" => panic!("Cannot process executable file: {}", file),
                     _ => panic!("Cannot process file with unknown extension: {}", file),
                 }
             } else {
@@ -110,8 +112,8 @@ fn main() {
         let file_groups = options.categorize_files();
 
         // Print the parsed options and file groups for demonstration
-        println!("Options: {:#?}", options);
-        println!("File Groups: {:#?}", file_groups);
+        //println!("Options: {:#?}", options);
+        //println!("File Groups: {:#?}", file_groups);
 
         compile_files(&options, &file_groups).expect("Compilation failed");
         ()

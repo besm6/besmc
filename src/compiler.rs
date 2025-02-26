@@ -60,9 +60,8 @@ pub fn compile_files(options: &CompilerOptions, file_groups: &FileGroups) -> Res
 
     // Write contents of each source file
     for src in &file_groups.ftn_files {
-        script
-            .write_all("*ftn\n".as_bytes())
-            .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+        script.write_all("*ftn\n".as_bytes())
+              .map_err(|e| format!("Failed to write build.dub: {}", e))?;
         write_file_contents(&script, src)?;
     }
     //TODO: fortran
@@ -88,6 +87,7 @@ pub fn compile_files(options: &CompilerOptions, file_groups: &FileGroups) -> Res
     // Ensure the file is written to disk
     script.flush()
           .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+    drop(script);
 
     // Write listing to file.
     let listing = fs::File::create(&listing_file)
@@ -106,6 +106,7 @@ pub fn compile_files(options: &CompilerOptions, file_groups: &FileGroups) -> Res
                               .map_err(|e| format!("Failed to create {}: {}", output_file, e))?;
         write_file_contents(&output, "output.bin")?;
         remove_file("output.bin")?;
+        remove_file("build.dub")?;
         Ok(())
     } else {
         Err(format!("Dubna failed with status: {}", status))

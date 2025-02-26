@@ -1,0 +1,9 @@
+ program: ,name,
+          ,*64 , info
+          ,*74 ,
+ info:    ,    , text
+          ,    , text
+          ,000 ,
+         8,    ,
+ text:    ,gost, 18hHello, Madlen!'214''231'
+          ,end ,

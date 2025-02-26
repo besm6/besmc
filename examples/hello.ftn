@@ -1,0 +1,5 @@
+        program hello
+        print 1000
+        stop
+ 1000   format('Hello, Ftn!')
+        end

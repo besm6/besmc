@@ -13,13 +13,16 @@ const HEADER: &str = "*name compile\n\
 const FOOTER_OBJ: &str = "*to perso: 60\n\
                           *end file\n";
 
-const FOOTER_EXE: &str = "*call overlay\n\
+const FOOTER_EXE: &str = "*library:22\n\
+                          *call overlay\n\
                           program\n\
                           *end record\n\
                           *end file\n";
 
-// Writes the contents of a source file to an already opened destination file
-fn write_file_contents(mut dest_file: &fs::File, src_filename: &str) -> Result<(), String> {
+//
+// Writes the contents of a source file to an already opened destination file.
+//
+fn copy_file_contents(mut dest_file: &fs::File, src_filename: &str) -> Result<(), String> {
     let mut src_file = fs::File::open(src_filename)
                                 .map_err(|e| format!("Failed to open source file '{}': {}", src_filename, e))?;
     io::copy(&mut src_file, &mut dest_file)
@@ -27,6 +30,22 @@ fn write_file_contents(mut dest_file: &fs::File, src_filename: &str) -> Result<(
     Ok(())
 }
 
+//
+// Writes the contents of many source files with given prefix
+// to an already opened destination file.
+//
+fn copy_files(mut dest_file: &fs::File, list_of_files: &Vec<String>, prefix: &str) -> Result<(), String> {
+    for src in list_of_files {
+        dest_file.write_all(prefix.as_bytes())
+              .map_err(|e| format!("Failed to write prefix: {}", e))?;
+        copy_file_contents(&dest_file, src)?;
+    }
+    Ok(())
+}
+
+//
+// Remove file and check status.
+//
 fn remove_file(filename: &str) -> Result<(), String> {
     match fs::remove_file(filename) {
         Ok(()) => {
@@ -59,18 +78,14 @@ pub fn compile_files(options: &CompilerOptions, file_groups: &FileGroups) -> Res
           .map_err(|e| format!("Failed to write build.dub: {}", e))?;
 
     // Write contents of each source file
-    for src in &file_groups.ftn_files {
-        script.write_all("*ftn\n".as_bytes())
-              .map_err(|e| format!("Failed to write build.dub: {}", e))?;
-        write_file_contents(&script, src)?;
-    }
-    //TODO: fortran
-    //TODO: forex
-    //TODO: algol
-    //TODO: pascal
-    //TODO: assem
-    //TODO: madlen
-    //TODO: bemsh
+    copy_files(&script, &file_groups.ftn_files, "*ftn\n")?;
+    copy_files(&script, &file_groups.fortran_files, "*fortran\n")?;
+    copy_files(&script, &file_groups.forex_files, "*forex\n")?;
+    copy_files(&script, &file_groups.algol_files, "*algol\n")?;
+    copy_files(&script, &file_groups.pascal_files, "*pascal\n")?;
+    copy_files(&script, &file_groups.assem_files, "*assem\n")?;
+    copy_files(&script, &file_groups.madlen_files, "*madlen\n")?;
+    copy_files(&script, &file_groups.bemsh_files, "*bemsh\n")?;
     //TODO: obj
 
     // Write the final step.
@@ -104,7 +119,7 @@ pub fn compile_files(options: &CompilerOptions, file_groups: &FileGroups) -> Res
         // Copy output.bin to output_file.
         let output = fs::File::create(&output_file)
                               .map_err(|e| format!("Failed to create {}: {}", output_file, e))?;
-        write_file_contents(&output, "output.bin")?;
+        copy_file_contents(&output, "output.bin")?;
         remove_file("output.bin")?;
         remove_file("build.dub")?;
         Ok(())

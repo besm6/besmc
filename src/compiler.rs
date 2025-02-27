@@ -3,6 +3,7 @@ use std::io::{self, Write};
 use std::process::Command;
 use std::path::Path;
 use std::process::Stdio;
+use std::os::unix::fs::PermissionsExt;
 
 use super::{CompilerOptions, FileGroups};
 
@@ -45,6 +46,25 @@ fn remove_file(filename: &str) -> Result<(), String> {
         }
         Err(e) => Err(format!("Failed to remove '{}': {}", filename, e)),
     }
+}
+
+//
+// Remove file and check status.
+//
+fn make_file_executable(file_path: &str) -> Result<(), String> {
+
+    // Get the current permissions of the file
+    let metadata = fs::metadata(file_path)
+                      .map_err(|e| format!("Cannot get metadata for {}: {}", file_path, e))?;
+    let mut permissions = metadata.permissions();
+
+    // Set executable bits.
+    permissions.set_mode(permissions.mode() | 0o111);
+
+    // Apply the new permissions to the file
+    fs::set_permissions(file_path, permissions)
+       .map_err(|e| format!("Cannot set permissions for {}: {}", file_path, e))?;
+    Ok(())
 }
 
 //
@@ -122,12 +142,19 @@ pub fn compile_files(options: &CompilerOptions, file_groups: &FileGroups) -> Res
         // Copy output.bin to output_file.
         let output = fs::File::create(&output_file)
                               .map_err(|e| format!("Failed to create {}: {}", output_file, e))?;
-
-        //TODO: add she-bang line "#!/usr/bin/env dubna"
+        if !options.stop_at_object {
+            // Add shebang line.
+            writeln!(&output, "#!/usr/bin/env dubna")
+                .map_err(|e| format!("Failed to write shebang: {}", e))?;
+        }
         copy_file_contents(&output, "output.bin")?;
         remove_file("output.bin")?;
         remove_file("build.dub")?;
-        //TODO: make output file executable
+        if !options.stop_at_object {
+            // Make output file executable.
+            drop(output);
+            make_file_executable(&output_file)?;
+        }
         Ok(())
     } else {
         Err(format!("Dubna failed with status: {}", status))

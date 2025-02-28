@@ -84,12 +84,14 @@ fn has_extension(filename: &str, ext_with_dot: &str) -> bool {
 pub fn compile_files(options: &CompilerOptions) -> Result<(), String> {
 
     // The first source file defines names of output binary and listing.
-    let stem = Path::new(&options.files[0]).file_stem().unwrap().to_str().unwrap().to_string();
+    let output_path = options.output_file.clone().unwrap_or(options.files[0].clone());
+    let stem = Path::new(&output_path).file_stem().unwrap().to_str().unwrap().to_string();
     let output_file = stem.clone() + if options.stop_at_object { ".obj" } else { ".exe" };
-    let listing_file = stem + ".lst";
+    let listing_file = stem.clone() + ".lst";
+    let script_file = stem + ".dub";
 
     // Create script for Dubna.
-    let mut script = fs::File::create("build.dub")
+    let mut script = fs::File::create(&script_file)
                               .map_err(|e| format!("Failed to create build.dub: {}", e))?;
     writeln!(script, "*name compile\n\
                       *disc:1/local\n\
@@ -150,7 +152,7 @@ pub fn compile_files(options: &CompilerOptions) -> Result<(), String> {
 
     // Run Dubna.
     let status = Command::new("dubna")
-                         .arg("build.dub")
+                         .arg(&script_file)
                          .stdout(Stdio::from(listing))
                          .status()
                          .map_err(|e| format!("Failed to execute dubna: {}", e))?;
@@ -168,7 +170,7 @@ pub fn compile_files(options: &CompilerOptions) -> Result<(), String> {
         }
         copy_file_contents(&output, "output.bin")?;
         remove_file("output.bin")?;
-        remove_file("build.dub")?;
+        remove_file(&script_file)?;
         if !options.stop_at_object {
             // Make output file executable.
             drop(output);

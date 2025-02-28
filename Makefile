@@ -22,4 +22,4 @@ install:
 	cargo install --path .
 
 clean:
-	rm -rf build
+	rm -rf build *.exe *.lst

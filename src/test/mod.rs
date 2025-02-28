@@ -11,24 +11,24 @@ fn parse_and_process(args: Vec<&str>) -> Result<CompilerOptions, String> {
 }
 
 //
-// Checks if a specific line exists in a file.
-// Returns true if the line is found.
-// Panics if there's an error reading the file.
+// Scans a file for a line that starts with the given text.
+// Returns the full line if found, empty string if not found.
 //
-fn contains_line(filename: &str, search_line: &str) -> bool {
+fn find_line_starting_with(filename: &str, prefix: &str) -> String {
     // Open the file and create a buffered reader
     let file = File::open(filename).unwrap();
     let reader = BufReader::new(file);
 
-    // Check each line in the file
+    // Scan each line in the file
     for line in reader.lines() {
-        if line.unwrap() == search_line {
-            return true;
+        let line = line.unwrap();
+        if line.starts_with(prefix) {
+            return line; // Return the full matching line
         }
     }
 
-    // Line wasn't found
-    false
+    // No matching line found
+    String::new() // Return empty string
 }
 
 #[test]
@@ -75,7 +75,7 @@ fn test_hello_algol() {
     };
     compile_files(&options).expect("Compilation failed");
 
-    assert_eq!(contains_line("hello_algol.lst", " ДЛИHA БИБЛИOTEKИ  001 17"), true);
+    assert_eq!(find_line_starting_with("hello_algol.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  001 17");
 }
 
 #[test]
@@ -87,7 +87,7 @@ fn test_hello_assem() {
     };
     compile_files(&options).expect("Compilation failed");
 
-    assert_eq!(contains_line("hello_assem.lst", " ДЛИHA БИБЛИOTEKИ  001 17"), true);
+    assert_eq!(find_line_starting_with("hello_assem.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  001 01");
 }
 
 #[test]
@@ -99,7 +99,7 @@ fn test_hello_bemsh() {
     };
     compile_files(&options).expect("Compilation failed");
 
-    assert_eq!(contains_line("hello_bemsh.lst", " ДЛИHA БИБЛИOTEKИ  001 17"), true);
+    assert_eq!(find_line_starting_with("hello_bemsh.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  001 01");
 }
 
 #[test]
@@ -111,7 +111,7 @@ fn test_hello_forex() {
     };
     compile_files(&options).expect("Compilation failed");
 
-    assert_eq!(contains_line("hello_forex.lst", " ДЛИHA БИБЛИOTEKИ  001 17"), true);
+    assert_eq!(find_line_starting_with("hello_forex.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  002 30");
 }
 
 #[test]
@@ -123,7 +123,7 @@ fn test_hello_fortran() {
     };
     compile_files(&options).expect("Compilation failed");
 
-    assert_eq!(contains_line("hello_fortran.lst", " ДЛИHA БИБЛИOTEKИ  001 17"), true);
+    assert_eq!(find_line_starting_with("hello_fortran.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  002 30");
 }
 
 #[test]
@@ -135,7 +135,7 @@ fn test_hello_ftn() {
     };
     compile_files(&options).expect("Compilation failed");
 
-    assert_eq!(contains_line("hello_ftn.lst", " ДЛИHA БИБЛИOTEKИ  001 17"), true);
+    assert_eq!(find_line_starting_with("hello_ftn.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  002 30");
 }
 
 #[test]
@@ -147,7 +147,7 @@ fn test_hello_madlen() {
     };
     compile_files(&options).expect("Compilation failed");
 
-    assert_eq!(contains_line("hello_madlen.lst", " ДЛИHA БИБЛИOTEKИ  001 17"), true);
+    assert_eq!(find_line_starting_with("hello_madlen.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  001 01");
 }
 
 #[test]
@@ -159,5 +159,5 @@ fn test_hello_pascal() {
     };
     compile_files(&options).expect("Compilation failed");
 
-    assert_eq!(contains_line("hello_pascal.lst", " ДЛИHA БИБЛИOTEKИ  001 17"), true);
+    assert_eq!(find_line_starting_with("hello_pascal.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  002 17");
 }

@@ -5,7 +5,7 @@ use std::path::Path;
 use std::process::Stdio;
 use std::os::unix::fs::PermissionsExt;
 
-use super::{CompilerOptions, FileGroups};
+use super::{CompilerOptions};
 
 //
 // Writes the contents of a source file to an already opened destination file.
@@ -22,12 +22,10 @@ fn copy_file_contents(mut dest_file: &fs::File, src_filename: &str) -> Result<()
 // Writes the contents of many source files with given prefix
 // to an already opened destination file.
 //
-fn copy_files(mut dest_file: &fs::File, list_of_files: &Vec<String>, prefix: &str) -> Result<(), String> {
-    for src in list_of_files {
-        dest_file.write_all(prefix.as_bytes())
-              .map_err(|e| format!("Failed to write prefix: {}", e))?;
-        copy_file_contents(&dest_file, src)?;
-    }
+fn copy_file(mut dest_file: &fs::File, src: &str, prefix: &str) -> Result<(), String> {
+    dest_file.write_all(prefix.as_bytes())
+          .map_err(|e| format!("Failed to write prefix: {}", e))?;
+    copy_file_contents(&dest_file, src)?;
     Ok(())
 }
 
@@ -68,11 +66,22 @@ fn make_file_executable(file_path: &str) -> Result<(), String> {
 }
 
 //
-// Compiles files based on options and file groups.
+// Check if a file name has a given extension.
+// Extension must start with a dot.
+// Comparison is case-insensitive, e.g., ".PDF" and ".pdf" are treated the same.
+// Returns true if the file has the extension.
+//
+fn has_extension(filename: &str, ext_with_dot: &str) -> bool {
+    let ext_lower = ext_with_dot.to_lowercase();
+    filename.to_lowercase().ends_with(&ext_lower)
+}
+
+//
+// Compiles files based on options.
 // If -c is set, compile .ftn and .assem and everything else to .obj, then stop.
 // Otherwise compile everything, then link into .exe.
 //
-pub fn compile_files(options: &CompilerOptions, file_groups: &FileGroups) -> Result<(), String> {
+pub fn compile_files(options: &CompilerOptions) -> Result<(), String> {
 
     // The first source file defines names of output binary and listing.
     let stem = Path::new(&options.files[0]).file_stem().unwrap().to_str().unwrap().to_string();
@@ -91,17 +100,27 @@ pub fn compile_files(options: &CompilerOptions, file_groups: &FileGroups) -> Res
     // Copy each .obj file to local inputN.bin file.
     // Here N=40...59.
 
-    // TODO: for each .obj input, add *perso:N directive.
-
     // Write contents of each source file
-    copy_files(&script, &file_groups.ftn_files, "*ftn\n")?;
-    copy_files(&script, &file_groups.fortran_files, "*fortran\n")?;
-    copy_files(&script, &file_groups.forex_files, "*forex\n")?;
-    copy_files(&script, &file_groups.algol_files, "*algol\n")?;
-    copy_files(&script, &file_groups.pascal_files, "*pascal\n")?;
-    copy_files(&script, &file_groups.assem_files, "*assem\n")?;
-    copy_files(&script, &file_groups.madlen_files, "*madlen\n")?;
-    copy_files(&script, &file_groups.bemsh_files, "*bemsh\n")?;
+    for file in &options.files {
+        let path = Path::new(file);
+        if let Some(ext) = path.extension() {
+            match ext.to_string_lossy().as_ref() {
+                "ftn"     => copy_file(&script, &file, "*ftn\n")?,
+                "fortran" => copy_file(&script, &file, "*fortran\n")?,
+                "forex"   => copy_file(&script, &file, "*forex\n")?,
+                "algol"   => copy_file(&script, &file, "*algol\n")?,
+                "pascal"  => copy_file(&script, &file, "*pascal\n")?,
+                "assem"   => copy_file(&script, &file, "*assem\n")?,
+                "madlen"  => copy_file(&script, &file, "*madlen\n")?,
+                "bemsh"   => copy_file(&script, &file, "*bemsh\n")?,
+                "obj"     => {}, // TODO: for each .obj input, add *perso:N directive.
+                "exe"     => return Err(format!("Cannot process executable file: {}", file)),
+                _         => return Err(format!("Unknown file extension: {}", file)),
+            }
+        } else {
+            return Err(format!("Cannot process file without extension: {}", file));
+        }
+    }
 
     // Write the final step.
     if options.stop_at_object {
@@ -111,7 +130,7 @@ pub fn compile_files(options: &CompilerOptions, file_groups: &FileGroups) -> Res
             .map_err(|e| format!("Failed to write build.dub: {}", e))?;
     } else {
         // Create executable binary (overlay).
-        let entry = if file_groups.bemsh_files.is_empty() { "program" } else { "main" };
+        let entry = if has_extension(&options.files[0], ".bemsh") { "main" } else { "program" };
         writeln!(script, "*library:22\n\
                           *call overlay\n\
                           {}\n\

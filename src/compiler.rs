@@ -84,11 +84,12 @@ fn has_extension(filename: &str, ext_with_dot: &str) -> bool {
 pub fn compile_files(options: &CompilerOptions) -> Result<(), String> {
 
     // The first source file defines names of output binary and listing.
-    let output_path = options.output_file.clone().unwrap_or(options.files[0].clone());
-    let stem = Path::new(&output_path).file_stem().unwrap().to_str().unwrap().to_string();
-    let output_file = stem.clone() + if options.stop_at_object { ".obj" } else { ".exe" };
-    let listing_file = stem.clone() + ".lst";
-    let script_file = stem + ".dub";
+    let output_option = options.output_file.clone().unwrap_or(options.files[0].clone());
+    let output_path = Path::new(&output_option);
+    let output_extension = if options.stop_at_object { "obj" } else { "exe" };
+    let output_file = output_path.with_extension(output_extension).to_string_lossy().into_owned();
+    let listing_file = output_path.with_extension("lst").to_string_lossy().into_owned();
+    let script_file = output_path.with_extension("dub").to_string_lossy().into_owned();
 
     // Create script for Dubna.
     let mut script = fs::File::create(&script_file)

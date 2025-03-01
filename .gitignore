@@ -4,3 +4,4 @@ target
 *.dub-
 *.exe
 *.lst
+*.obj

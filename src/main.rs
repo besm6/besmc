@@ -1,4 +1,5 @@
 use clap::Parser;
+use std::panic;
 
 mod compiler;
 use compiler::compile_files;
@@ -40,11 +41,40 @@ struct CompilerOptions {
 }
 
 fn main() {
+    // Set a custom panic hook
+    panic::set_hook(Box::new(|panic_info| {
+        // Print location of the panic.
+        if let Some(_location) = panic_info.location() {
+            // Uncomment for debug:
+            // println!("Aborted at {}, line {}:", location.file(), location.line());
+        }
+        // Proceed to catch_unwind().
+    }));
+
     // Parse arguments using clap
     let options = CompilerOptions::parse();
 
     // Print the parsed options and file groups for demonstration
     //println!("Options: {:#?}", options);
 
-    compile_files(&options).expect("Compilation failed");
+    // Use catch_unwind to handle panics from validation and file categorization
+    let result = panic::catch_unwind(|| {
+        compile_files(&options)
+    });
+    match result {
+        Ok(()) => {
+            // All good.
+        }
+        Err(panic_err) => {
+            // Extract and print the panic message
+            if let Some(msg) = panic_err.downcast_ref::<String>() {
+                eprintln!("{}", msg);
+            } else if let Some(msg) = panic_err.downcast_ref::<&str>() {
+                eprintln!("{}", msg);
+            } else {
+                eprintln!("Unknown error occurred");
+            }
+            std::process::exit(1); // Exit with error code
+        }
+    }
 }

@@ -8,7 +8,7 @@ fn test_algol_exe() {
         stop_at_object: false,
         files: vec!["examples/hello.algol".to_string()],
     };
-    compile_files(&options).expect("Compilation failed");
+    compile_files(&options);
 
     assert_eq!(find_line_starting_with("target/hello_algol.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  001 17");
 }
@@ -20,7 +20,7 @@ fn test_assem_exe() {
         stop_at_object: false,
         files: vec!["examples/hello.assem".to_string()],
     };
-    compile_files(&options).expect("Compilation failed");
+    compile_files(&options);
 
     assert_eq!(find_line_starting_with("target/hello_assem.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  001 01");
 }
@@ -32,7 +32,7 @@ fn test_bemsh_exe() {
         stop_at_object: false,
         files: vec!["examples/hello.bemsh".to_string()],
     };
-    compile_files(&options).expect("Compilation failed");
+    compile_files(&options);
 
     assert_eq!(find_line_starting_with("target/hello_bemsh.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  001 01");
 }
@@ -44,7 +44,7 @@ fn test_forex_exe() {
         stop_at_object: false,
         files: vec!["examples/hello.forex".to_string()],
     };
-    compile_files(&options).expect("Compilation failed");
+    compile_files(&options);
 
     assert_eq!(find_line_starting_with("target/hello_forex.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  002 30");
 }
@@ -56,7 +56,7 @@ fn test_fortran_exe() {
         stop_at_object: false,
         files: vec!["examples/hello.fortran".to_string()],
     };
-    compile_files(&options).expect("Compilation failed");
+    compile_files(&options);
 
     assert_eq!(find_line_starting_with("target/hello_fortran.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  002 30");
 }
@@ -68,7 +68,7 @@ fn test_ftn_exe() {
         stop_at_object: false,
         files: vec!["examples/hello.ftn".to_string()],
     };
-    compile_files(&options).expect("Compilation failed");
+    compile_files(&options);
 
     assert_eq!(find_line_starting_with("target/hello_ftn.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  002 30");
 }
@@ -80,7 +80,7 @@ fn test_madlen_exe() {
         stop_at_object: false,
         files: vec!["examples/hello.madlen".to_string()],
     };
-    compile_files(&options).expect("Compilation failed");
+    compile_files(&options);
 
     assert_eq!(find_line_starting_with("target/hello_madlen.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  001 01");
 }
@@ -92,7 +92,7 @@ fn test_pascal_exe() {
         stop_at_object: false,
         files: vec!["examples/hello.pascal".to_string()],
     };
-    compile_files(&options).expect("Compilation failed");
+    compile_files(&options);
 
     assert_eq!(find_line_starting_with("target/hello_pascal.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  002 17");
 }

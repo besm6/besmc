@@ -8,7 +8,7 @@ fn test_algol_obj() {
         stop_at_object: true,
         files: vec!["examples/hello.algol".to_string()],
     };
-    compile_files(&options).expect("Compilation failed");
+    compile_files(&options);
 
     assert_eq!(find_line_starting_with("target/lib_algol.lst", " ДЛИHA LIBRARY"), " ДЛИHA LIBRARY  003 ЗOH");
 }
@@ -20,7 +20,7 @@ fn test_assem_obj() {
         stop_at_object: true,
         files: vec!["examples/hello.assem".to_string()],
     };
-    compile_files(&options).expect("Compilation failed");
+    compile_files(&options);
 
     assert_eq!(find_line_starting_with("target/lib_assem.lst", " ДЛИHA LIBRARY"), " ДЛИHA LIBRARY  003 ЗOH");
 }
@@ -32,7 +32,7 @@ fn test_bemsh_obj() {
         stop_at_object: true,
         files: vec!["examples/hello.bemsh".to_string()],
     };
-    compile_files(&options).expect("Compilation failed");
+    compile_files(&options);
 
     assert_eq!(find_line_starting_with("target/lib_bemsh.lst", " ДЛИHA LIBRARY"), " ДЛИHA LIBRARY  003 ЗOH");
 }
@@ -44,7 +44,7 @@ fn test_forex_obj() {
         stop_at_object: true,
         files: vec!["examples/hello.forex".to_string()],
     };
-    compile_files(&options).expect("Compilation failed");
+    compile_files(&options);
 
     assert_eq!(find_line_starting_with("target/lib_forex.lst", " ДЛИHA LIBRARY"), " ДЛИHA LIBRARY  003 ЗOH");
 }
@@ -56,7 +56,7 @@ fn test_fortran_obj() {
         stop_at_object: true,
         files: vec!["examples/hello.fortran".to_string()],
     };
-    compile_files(&options).expect("Compilation failed");
+    compile_files(&options);
 
     assert_eq!(find_line_starting_with("target/lib_fortran.lst", " ДЛИHA LIBRARY"), " ДЛИHA LIBRARY  003 ЗOH");
 }
@@ -68,7 +68,7 @@ fn test_ftn_obj() {
         stop_at_object: true,
         files: vec!["examples/hello.ftn".to_string()],
     };
-    compile_files(&options).expect("Compilation failed");
+    compile_files(&options);
 
     assert_eq!(find_line_starting_with("target/lib_ftn.lst", " ДЛИHA LIBRARY"), " ДЛИHA LIBRARY  003 ЗOH");
 }
@@ -80,7 +80,7 @@ fn test_madlen_obj() {
         stop_at_object: true,
         files: vec!["examples/hello.madlen".to_string()],
     };
-    compile_files(&options).expect("Compilation failed");
+    compile_files(&options);
 
     assert_eq!(find_line_starting_with("target/lib_madlen.lst", " ДЛИHA LIBRARY"), " ДЛИHA LIBRARY  003 ЗOH");
 }
@@ -92,7 +92,7 @@ fn test_pascal_obj() {
         stop_at_object: true,
         files: vec!["examples/hello.pascal".to_string()],
     };
-    compile_files(&options).expect("Compilation failed");
+    compile_files(&options);
 
     assert_eq!(find_line_starting_with("target/lib_pascal.lst", " ДЛИHA LIBRARY"), " ДЛИHA LIBRARY  003 ЗOH");
 }

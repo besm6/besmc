@@ -10,50 +10,42 @@ use super::{CompilerOptions};
 //
 // Writes the contents of a source file to an already opened destination file.
 //
-fn copy_file_contents(mut dest_file: &fs::File, src_filename: &str) -> Result<(), String> {
+fn copy_file_contents(mut dest_file: &fs::File, src_filename: &str)  {
     let mut src_file = fs::File::open(src_filename)
-                                .map_err(|e| format!("Failed to open source file '{}': {}", src_filename, e))?;
+                                .unwrap_or_else(|e| { panic!("Failed to open source file '{}': {}", src_filename, e); });
     io::copy(&mut src_file, &mut dest_file)
-       .map_err(|e| format!("Failed to copy to destination: {}", e))?;
-    Ok(())
+       .unwrap_or_else(|e| { panic!("Failed to copy to destination: {}", e); });
 }
 
 //
 // Writes the contents of many source files with given prefix
 // to an already opened destination file.
 //
-fn copy_file(mut dest_file: &fs::File, src: &str, prefix: &str) -> Result<(), String> {
+fn copy_file(mut dest_file: &fs::File, src: &str, prefix: &str)  {
     dest_file.write_all(prefix.as_bytes())
-          .map_err(|e| format!("Failed to write prefix: {}", e))?;
-    copy_file_contents(&dest_file, src)?;
-    Ok(())
+             .unwrap_or_else(|e| { panic!("Failed to write prefix: {}", e); });
+    copy_file_contents(&dest_file, src);
 }
 
 //
 // Remove file and check status.
 //
-fn remove_file(filename: &str) -> Result<(), String> {
+fn remove_file(filename: &str) {
     match fs::remove_file(filename) {
-        Ok(()) => {
-            // File removed.
-            Ok(())
-        }
-        Err(e) if e.kind() == io::ErrorKind::NotFound => {
-            // File not found, nothing to remove.
-            Ok(())
-        }
-        Err(e) => Err(format!("Failed to remove '{}': {}", filename, e)),
+        Ok(()) => {}, // File removed
+        Err(e) if e.kind() == io::ErrorKind::NotFound => {}, // File not found, nothing to remove
+        Err(e) => panic!("Failed to remove '{}': {}", filename, e),
     }
 }
 
 //
 // Remove file and check status.
 //
-fn make_file_executable(file_path: &str) -> Result<(), String> {
+fn make_file_executable(file_path: &str) {
 
     // Get the current permissions of the file
     let metadata = fs::metadata(file_path)
-                      .map_err(|e| format!("Cannot get metadata for {}: {}", file_path, e))?;
+                      .unwrap_or_else(|e| { panic!("Cannot get metadata for {}: {}", file_path, e); });
     let mut permissions = metadata.permissions();
 
     // Set executable bits.
@@ -61,8 +53,7 @@ fn make_file_executable(file_path: &str) -> Result<(), String> {
 
     // Apply the new permissions to the file
     fs::set_permissions(file_path, permissions)
-       .map_err(|e| format!("Cannot set permissions for {}: {}", file_path, e))?;
-    Ok(())
+        .unwrap_or_else(|e| { panic!("Cannot set permissions for {}: {}", file_path, e); });
 }
 
 //
@@ -81,10 +72,11 @@ fn has_extension(filename: &str, ext_with_dot: &str) -> bool {
 // If -c is set, compile .ftn and .assem and everything else to .obj, then stop.
 // Otherwise compile everything, then link into .exe.
 //
-pub fn compile_files(options: &CompilerOptions) -> Result<(), String> {
+pub fn compile_files(options: &CompilerOptions) {
 
     // The first source file defines names of output binary and listing.
-    let output_option = options.output_file.clone().unwrap_or(options.files[0].clone());
+    let output_option = options.output_file.clone()
+                               .unwrap_or(options.files[0].clone());
     let output_path = Path::new(&output_option);
     let output_extension = if options.stop_at_object { "obj" } else { "exe" };
     let output_file = output_path.with_extension(output_extension).to_string_lossy().into_owned();
@@ -93,11 +85,11 @@ pub fn compile_files(options: &CompilerOptions) -> Result<(), String> {
 
     // Create script for Dubna.
     let mut script = fs::File::create(&script_file)
-                              .map_err(|e| format!("Failed to create build.dub: {}", e))?;
+                              .unwrap_or_else(|e| { panic!("Failed to create build.dub: {}", e); });
     writeln!(script, "*name compile\n\
                       *disc:1/local\n\
                       *file:output,60,w")
-        .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+        .unwrap_or_else(|e| { panic!("Failed to write build.dub: {}", e); });
 
     // TODO: for each .obj input, create *file:inputN.bin directive.
     // Copy each .obj file to local inputN.bin file.
@@ -108,20 +100,20 @@ pub fn compile_files(options: &CompilerOptions) -> Result<(), String> {
         let path = Path::new(file);
         if let Some(ext) = path.extension() {
             match ext.to_string_lossy().as_ref() {
-                "ftn"     => copy_file(&script, &file, "*ftn\n")?,
-                "fortran" => copy_file(&script, &file, "*fortran\n")?,
-                "forex"   => copy_file(&script, &file, "*forex\n")?,
-                "algol"   => copy_file(&script, &file, "*algol\n")?,
-                "pascal"  => copy_file(&script, &file, "*pascal\n")?,
-                "assem"   => copy_file(&script, &file, "*assem\n")?,
-                "madlen"  => copy_file(&script, &file, "*madlen\n")?,
-                "bemsh"   => copy_file(&script, &file, "*bemsh\n")?,
+                "ftn"     => copy_file(&script, &file, "*ftn\n"),
+                "fortran" => copy_file(&script, &file, "*fortran\n"),
+                "forex"   => copy_file(&script, &file, "*forex\n"),
+                "algol"   => copy_file(&script, &file, "*algol\n"),
+                "pascal"  => copy_file(&script, &file, "*pascal\n"),
+                "assem"   => copy_file(&script, &file, "*assem\n"),
+                "madlen"  => copy_file(&script, &file, "*madlen\n"),
+                "bemsh"   => copy_file(&script, &file, "*bemsh\n"),
                 "obj"     => {}, // TODO: for each .obj input, add *perso:N directive.
-                "exe"     => return Err(format!("Cannot process executable file: {}", file)),
-                _         => return Err(format!("Unknown file extension: {}", file)),
+                "exe"     => panic!("Cannot process executable file: {}", file),
+                _         => panic!("Unknown file extension: {}", file),
             }
         } else {
-            return Err(format!("Cannot process file without extension: {}", file));
+            panic!("Cannot process file without extension: {}", file);
         }
     }
 
@@ -130,7 +122,7 @@ pub fn compile_files(options: &CompilerOptions) -> Result<(), String> {
         // Save as library of object files.
         writeln!(script, "*to perso: 60\n\
                           *end file")
-            .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+            .unwrap_or_else(|e| { panic!("Failed to write build.dub: {}", e); });
     } else {
         // Create executable binary (overlay).
         let entry = if has_extension(&options.files[0], ".bemsh") { "main" } else { "program" };
@@ -139,46 +131,47 @@ pub fn compile_files(options: &CompilerOptions) -> Result<(), String> {
                           {}\n\
                           *end record\n\
                           *end file", entry)
-            .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+            .unwrap_or_else(|e| { panic!("Failed to write build.dub: {}", e); });
     }
 
     // Ensure the file is written to disk
     script.flush()
-          .map_err(|e| format!("Failed to write build.dub: {}", e))?;
+          .unwrap_or_else(|e| { panic!("Failed to write build.dub: {}", e); });
     drop(script);
 
     // Write listing to file.
     let listing = fs::File::create(&listing_file)
-                           .map_err(|e| format!("Failed to create {}: {}", listing_file, e))?;
+                           .unwrap_or_else(|e| { panic!("Failed to create {}: {}", listing_file, e); });
 
     // Run Dubna.
     let status = Command::new("dubna")
                          .arg(&script_file)
                          .stdout(Stdio::from(listing))
                          .status()
-                         .map_err(|e| format!("Failed to execute dubna: {}", e))?;
+                         .unwrap_or_else(|e| { panic!("Failed to execute dubna: {}", e); });
 
     //TODO: Scan listing and find compilation errors.
 
-    if status.success() {
-        // Copy output.bin to output_file.
-        let output = fs::File::create(&output_file)
-                              .map_err(|e| format!("Failed to create {}: {}", output_file, e))?;
-        if !options.stop_at_object {
-            // Add shebang line.
-            writeln!(&output, "#!/usr/bin/env dubna")
-                .map_err(|e| format!("Failed to write shebang: {}", e))?;
-        }
-        copy_file_contents(&output, "output.bin")?;
-        remove_file("output.bin")?;
-        remove_file(&script_file)?;
-        if !options.stop_at_object {
-            // Make output file executable.
-            drop(output);
-            make_file_executable(&output_file)?;
-        }
-        Ok(())
-    } else {
-        Err(format!("Dubna failed with status: {}", status))
+    if !status.success() {
+        panic!("Dubna failed with status: {}", status)
+    }
+
+    // Copy output.bin to output_file.
+    let output = fs::File::create(&output_file)
+                          .unwrap_or_else(|e| { panic!("Failed to create {}: {}", output_file, e); });
+    if !options.stop_at_object {
+        // Add shebang line.
+        writeln!(&output, "#!/usr/bin/env dubna")
+            .unwrap_or_else(|e| { panic!("Failed to write shebang: {}", e); });
+    }
+    copy_file_contents(&output, "output.bin");
+
+    remove_file("output.bin");
+    remove_file(&script_file);
+
+    if !options.stop_at_object {
+        // Make output file executable.
+        drop(output);
+        make_file_executable(&output_file);
     }
 }

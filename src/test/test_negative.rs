@@ -11,7 +11,12 @@ fn compile_exe_negative(contents: &str, source_file: &str) {
         stop_at_object: false,
         files: vec![source_file.to_string()],
     };
-    compile_files(&options).expect_err("Compilation did not fail");
+
+    // Try to compile and make sure it panicked.
+    let result = panic::catch_unwind(|| {
+        compile_files(&options);
+    });
+    assert!(result.is_err(), "Compilation did not fail");
 }
 
 #[test]

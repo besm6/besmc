@@ -7,11 +7,10 @@ mod test_obj;
 mod test_negative;
 
 // Helper to parse args and return options, or panic message
-fn parse_and_process(args: Vec<&str>) -> Result<CompilerOptions, String> {
-    let options = CompilerOptions::try_parse_from(args).unwrap_or_else(|e| {
+fn parse_and_process(args: Vec<&str>) -> CompilerOptions {
+    CompilerOptions::try_parse_from(args).unwrap_or_else(|e| {
         panic!("{}", e.to_string());
-    });
-    Ok(options)
+    })
 }
 
 //

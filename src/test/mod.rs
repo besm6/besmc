@@ -4,6 +4,7 @@ use std::io::BufRead;
 mod test_options;
 mod test_exe;
 mod test_obj;
+mod test_negative;
 
 // Helper to parse args and return options, or panic message
 fn parse_and_process(args: Vec<&str>) -> Result<CompilerOptions, String> {

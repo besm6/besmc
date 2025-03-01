@@ -12,7 +12,7 @@ use super::{CompilerOptions};
 //
 fn copy_file_contents(mut dest_file: &fs::File, src_filename: &str)  {
     let mut src_file = fs::File::open(src_filename)
-                                .unwrap_or_else(|e| { panic!("Failed to open source file '{}': {}", src_filename, e); });
+                                .unwrap_or_else(|e| { panic!("Failed to open file '{}': {}", src_filename, e); });
     io::copy(&mut src_file, &mut dest_file)
        .unwrap_or_else(|e| { panic!("Failed to copy to destination: {}", e); });
 }
@@ -122,7 +122,7 @@ pub fn compile_files(options: &CompilerOptions) {
         // Save as library of object files.
         writeln!(script, "*to perso: 60\n\
                           *end file")
-            .unwrap_or_else(|e| { panic!("Failed to write build.dub: {}", e); });
+            .unwrap_or_else(|e| { panic!("Failed to write {}: {}", script_file, e); });
     } else {
         // Create executable binary (overlay).
         let entry = if has_extension(&options.files[0], ".bemsh") { "main" } else { "program" };
@@ -131,12 +131,12 @@ pub fn compile_files(options: &CompilerOptions) {
                           {}\n\
                           *end record\n\
                           *end file", entry)
-            .unwrap_or_else(|e| { panic!("Failed to write build.dub: {}", e); });
+            .unwrap_or_else(|e| { panic!("Failed to write {}: {}", script_file, e); });
     }
 
     // Ensure the file is written to disk
     script.flush()
-          .unwrap_or_else(|e| { panic!("Failed to write build.dub: {}", e); });
+          .unwrap_or_else(|e| { panic!("Failed to flush {}: {}", script_file, e); });
     drop(script);
 
     // Write listing to file.
@@ -149,12 +149,11 @@ pub fn compile_files(options: &CompilerOptions) {
                          .stdout(Stdio::from(listing))
                          .status()
                          .unwrap_or_else(|e| { panic!("Failed to execute dubna: {}", e); });
-
-    //TODO: Scan listing and find compilation errors.
-
     if !status.success() {
         panic!("Dubna failed with status: {}", status)
     }
+
+    //TODO: Scan listing and find compilation errors.
 
     // Copy output.bin to output_file.
     let output = fs::File::create(&output_file)

@@ -1,0 +1,4 @@
+        subroutine hello
+        print 1000
+ 1000   format('Hello Fortran from Pascal!')
+        end

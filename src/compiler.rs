@@ -29,17 +29,29 @@ fn copy_file(mut dest_file: &fs::File, src: &str, prefix: &str)  {
 }
 
 //
-// Add *perso:NN directive to the script.
+// Add *file:persoNN directive to the script.
 // Here NN=40...57 (octal).
 // Copy .obj file to a temporary 'persNN.bin' file.
 // Increment perso index.
 // Return name of the temporary file.
 //
-fn create_perso_file(mut _script_file: &fs::File, _obj_filename: &str, perso_index: &mut i32) -> String
+fn create_perso_file(mut script_file: &fs::File, obj_filename: &str, perso_index: &mut i32) -> String
 {
-    // TODO
+    if *perso_index >= 0o60 {
+        panic!("Cannot process {}: too many object files", obj_filename);
+    }
+    writeln!(script_file, "*file:pers{:o},{:o}", *perso_index, *perso_index)
+        .unwrap_or_else(|e| { panic!("Failed to write *file: {}", e); });
+
+    let bin_filename = format!("pers{:o}.bin", *perso_index);
     *perso_index += 1;
-    "foobar.bin".to_string()
+
+    // Copy file contents.
+    let _ = fs::copy(obj_filename, &bin_filename)
+               .unwrap_or_else(|e| { panic!("Failed to copy {} to {}: {}", obj_filename, bin_filename, e); });
+
+    // Return name of temporary file.
+    bin_filename
 }
 
 //
@@ -164,8 +176,19 @@ pub fn compile_files(options: &CompilerOptions) {
                       *file:output,60,w")
         .unwrap_or_else(|e| { panic!("Failed to write build.dub: {}", e); });
 
+    // Add *file:persNN directive for each .obj file.
+    let mut perso_index = 0o40;
+    for file in &options.files {
+        let path = Path::new(file);
+        if let Some(ext) = path.extension() {
+            if ext.to_string_lossy().as_ref() == "obj" {
+                files_to_remove.push(create_perso_file(&script, file, &mut perso_index));
+            }
+        }
+    }
+
     // Write contents of each source file
-    let mut perso_index = 040;
+    perso_index = 0o40;
     for file in &options.files {
         let path = Path::new(file);
         if let Some(ext) = path.extension() {
@@ -179,10 +202,9 @@ pub fn compile_files(options: &CompilerOptions) {
                 "madlen"  => copy_file(&script, &file, "*madlen\n"),
                 "bemsh"   => copy_file(&script, &file, "*bemsh\n"),
                 "obj"     => {
-                                // For each .obj input, add *perso:NN directive.
-                                // Copy each .obj file to local persNN.bin file.
-                                // Here NN=40...57 (octal).
-                                files_to_remove.push(create_perso_file(&script, file, &mut perso_index));
+                                writeln!(&script, "*call perso:{:o},cont", perso_index)
+                                    .unwrap_or_else(|e| { panic!("Failed to write *perso: {}", e); });
+                                perso_index += 1;
                             },
                 "exe"     => panic!("Cannot process executable file: {}", file),
                 _         => panic!("Unknown file extension: {}", file),
@@ -244,8 +266,10 @@ pub fn compile_files(options: &CompilerOptions) {
     copy_file_contents(&output, "output.bin");
 
     // Remove temporary files.
-    for file_name in files_to_remove {
-        remove_file(&file_name);
+    if !options.save_temps {
+        for file_name in files_to_remove {
+            remove_file(&file_name);
+        }
     }
 
     if !options.stop_at_object {

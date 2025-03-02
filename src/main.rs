@@ -8,7 +8,7 @@ use compiler::compile_files;
 mod test;
 
 // Data structure to hold all parsed compiler options and files
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Default)]
 #[command(
     about = "BESM-6 compiler frontend",
     disable_help_flag = false,
@@ -22,6 +22,10 @@ struct CompilerOptions {
     /// Compile only to object files
     #[arg(short = 'c', long = "compile")]
     stop_at_object: bool,
+
+    /// Keep intermediate files
+    #[arg(short = 't', long = "save-temps")]
+    save_temps: bool,
 
     // Input files
     #[arg(

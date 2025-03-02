@@ -10,6 +10,7 @@ fn compile_obj_negative(contents: &str, source_file: &str) {
         output_file: Some(output_file.to_string()),
         stop_at_object: true,
         files: vec![source_file.to_string()],
+        ..Default::default()
     };
 
     // Try to compile and make sure it panicked.

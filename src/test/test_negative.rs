@@ -8,8 +8,8 @@ fn compile_exe_negative(contents: &str, source_file: &str) {
     let output_file = std::path::Path::new(&source_file).with_extension("exe").to_string_lossy().into_owned();
     let options = CompilerOptions {
         output_file: Some(output_file.to_string()),
-        stop_at_object: false,
         files: vec![source_file.to_string()],
+        ..Default::default()
     };
 
     // Try to compile and make sure it panicked.

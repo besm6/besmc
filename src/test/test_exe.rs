@@ -5,8 +5,8 @@ use crate::test::*;
 fn test_algol_exe() {
     let options = CompilerOptions {
         output_file: Some("target/hello_algol.exe".to_string()),
-        stop_at_object: false,
         files: vec!["examples/hello.algol".to_string()],
+        ..Default::default()
     };
     compile_files(&options);
 
@@ -17,8 +17,8 @@ fn test_algol_exe() {
 fn test_assem_exe() {
     let options = CompilerOptions {
         output_file: Some("target/hello_assem.exe".to_string()),
-        stop_at_object: false,
         files: vec!["examples/hello.assem".to_string()],
+        ..Default::default()
     };
     compile_files(&options);
 
@@ -29,8 +29,8 @@ fn test_assem_exe() {
 fn test_bemsh_exe() {
     let options = CompilerOptions {
         output_file: Some("target/hello_bemsh.exe".to_string()),
-        stop_at_object: false,
         files: vec!["examples/hello.bemsh".to_string()],
+        ..Default::default()
     };
     compile_files(&options);
 
@@ -41,8 +41,8 @@ fn test_bemsh_exe() {
 fn test_forex_exe() {
     let options = CompilerOptions {
         output_file: Some("target/hello_forex.exe".to_string()),
-        stop_at_object: false,
         files: vec!["examples/hello.forex".to_string()],
+        ..Default::default()
     };
     compile_files(&options);
 
@@ -53,8 +53,8 @@ fn test_forex_exe() {
 fn test_fortran_exe() {
     let options = CompilerOptions {
         output_file: Some("target/hello_fortran.exe".to_string()),
-        stop_at_object: false,
         files: vec!["examples/hello.fortran".to_string()],
+        ..Default::default()
     };
     compile_files(&options);
 
@@ -65,8 +65,8 @@ fn test_fortran_exe() {
 fn test_ftn_exe() {
     let options = CompilerOptions {
         output_file: Some("target/hello_ftn.exe".to_string()),
-        stop_at_object: false,
         files: vec!["examples/hello.ftn".to_string()],
+        ..Default::default()
     };
     compile_files(&options);
 
@@ -77,8 +77,8 @@ fn test_ftn_exe() {
 fn test_madlen_exe() {
     let options = CompilerOptions {
         output_file: Some("target/hello_madlen.exe".to_string()),
-        stop_at_object: false,
         files: vec!["examples/hello.madlen".to_string()],
+        ..Default::default()
     };
     compile_files(&options);
 
@@ -89,8 +89,8 @@ fn test_madlen_exe() {
 fn test_pascal_exe() {
     let options = CompilerOptions {
         output_file: Some("target/hello_pascal.exe".to_string()),
-        stop_at_object: false,
         files: vec!["examples/hello.pascal".to_string()],
+        ..Default::default()
     };
     compile_files(&options);
 

@@ -9,6 +9,7 @@ fn compile_obj(source_file_name: &str, output_file_name: &str) {
         files: vec![source_file_name.to_string()],
         output_file: Some(output_file_name.to_string()),
         stop_at_object: true,
+        ..Default::default()
     };
     compile_files(&options);
 

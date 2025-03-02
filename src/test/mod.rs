@@ -6,6 +6,7 @@ mod test_exe;
 mod test_obj;
 mod test_negative;
 mod test_obj_negative;
+mod test_pascal_to_fortran;
 
 // Helper to parse args and return options, or panic message
 fn parse_and_process(args: Vec<&str>) -> CompilerOptions {

@@ -29,13 +29,27 @@ fn copy_file(mut dest_file: &fs::File, src: &str, prefix: &str)  {
 }
 
 //
+// Add *perso:NN directive to the script.
+// Here NN=40...57 (octal).
+// Copy .obj file to a temporary 'persNN.bin' file.
+// Increment perso index.
+// Return name of the temporary file.
+//
+fn create_perso_file(mut _script_file: &fs::File, _obj_filename: &str, perso_index: &mut i32) -> String
+{
+    // TODO
+    *perso_index += 1;
+    "foobar.bin".to_string()
+}
+
+//
 // Remove file and check status.
 //
 fn remove_file(filename: &str) {
     match fs::remove_file(filename) {
         Ok(()) => {}, // File removed
         Err(e) if e.kind() == io::ErrorKind::NotFound => {}, // File not found, nothing to remove
-        Err(e) => panic!("Failed to remove '{}': {}", filename, e),
+        Err(e) => println!("Cannot remove '{}': {}", filename, e),
     }
 }
 
@@ -136,6 +150,12 @@ pub fn compile_files(options: &CompilerOptions) {
     let listing_file = output_path.with_extension("lst").to_string_lossy().into_owned();
     let script_file = output_path.with_extension("dub").to_string_lossy().into_owned();
 
+    // Create a list of files to remove when done.
+    let mut files_to_remove: Vec<String> = vec![
+        "output.bin".to_string(),
+        script_file.clone(),
+    ];
+
     // Create script for Dubna.
     let mut script = fs::File::create(&script_file)
                               .unwrap_or_else(|e| { panic!("Failed to create build.dub: {}", e); });
@@ -144,11 +164,8 @@ pub fn compile_files(options: &CompilerOptions) {
                       *file:output,60,w")
         .unwrap_or_else(|e| { panic!("Failed to write build.dub: {}", e); });
 
-    // TODO: for each .obj input, create *file:inputN.bin directive.
-    // Copy each .obj file to local inputN.bin file.
-    // Here N=40...59.
-
     // Write contents of each source file
+    let mut perso_index = 040;
     for file in &options.files {
         let path = Path::new(file);
         if let Some(ext) = path.extension() {
@@ -161,7 +178,12 @@ pub fn compile_files(options: &CompilerOptions) {
                 "assem"   => copy_file(&script, &file, "*assem\n"),
                 "madlen"  => copy_file(&script, &file, "*madlen\n"),
                 "bemsh"   => copy_file(&script, &file, "*bemsh\n"),
-                "obj"     => {}, // TODO: for each .obj input, add *perso:N directive.
+                "obj"     => {
+                                // For each .obj input, add *perso:NN directive.
+                                // Copy each .obj file to local persNN.bin file.
+                                // Here NN=40...57 (octal).
+                                files_to_remove.push(create_perso_file(&script, file, &mut perso_index));
+                            },
                 "exe"     => panic!("Cannot process executable file: {}", file),
                 _         => panic!("Unknown file extension: {}", file),
             }
@@ -173,7 +195,7 @@ pub fn compile_files(options: &CompilerOptions) {
     // Write the final step.
     if options.stop_at_object {
         // Save as library of object files.
-        writeln!(script, "*to perso: 60\n\
+        writeln!(script, "*call to perso: 60\n\
                           *end file")
             .unwrap_or_else(|e| { panic!("Failed to write {}: {}", script_file, e); });
     } else {
@@ -221,8 +243,10 @@ pub fn compile_files(options: &CompilerOptions) {
     }
     copy_file_contents(&output, "output.bin");
 
-    remove_file("output.bin");
-    remove_file(&script_file);
+    // Remove temporary files.
+    for file_name in files_to_remove {
+        remove_file(&file_name);
+    }
 
     if !options.stop_at_object {
         // Make output file executable.

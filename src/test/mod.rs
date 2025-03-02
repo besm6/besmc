@@ -5,6 +5,7 @@ mod test_options;
 mod test_exe;
 mod test_obj;
 mod test_negative;
+mod test_obj_negative;
 
 // Helper to parse args and return options, or panic message
 fn parse_and_process(args: Vec<&str>) -> CompilerOptions {

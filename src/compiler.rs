@@ -1,9 +1,10 @@
 use std::fs;
-use std::io::{self, Write};
+use std::io::{self, Write, BufRead, BufReader};
 use std::process::Command;
 use std::path::Path;
 use std::process::Stdio;
 use std::os::unix::fs::PermissionsExt;
+use regex::Regex;
 
 use super::{CompilerOptions};
 
@@ -65,6 +66,58 @@ fn make_file_executable(file_path: &str) {
 fn has_extension(filename: &str, ext_with_dot: &str) -> bool {
     let ext_lower = ext_with_dot.to_lowercase();
     filename.to_lowercase().ends_with(&ext_lower)
+}
+
+// Function to search for patterns in a file
+fn search_errors_in_listing(file_path: &str, _options: &CompilerOptions) -> bool {
+
+    // List of possible error messages
+    let patterns = vec![
+        String::from(r"БЫЛИ OШИБKИ ПPИ BBOДE ИЛИ TPAHCЛЯЦИИ"),
+        String::from(r"HET ′EOP′"),
+        String::from(r"OTCYTCTBYET ИMЯ ПPOГPAMMЫ"),
+        String::from(r"OTCYTCTBYET ИMЯ ПOДПPOГPAMMЫ"),
+        String::from(r"OTCYTCTBYET ЗAГOЛOBOK ПOДПPOГPAMMЫ"),
+        String::from(r"ЗHAЧEH.* HE ИCПOЛЬЗYETCЯ"),
+        String::from(r"ЗHAЧEH.* HE OПPEДEЛEHO"),
+        String::from(r"INCORRECT ALGOL PROGRAM"),
+        String::from(r"\*\*\*\*\*\*HEOПИCAHHЫЙ ИДEHTИФИKATOP"),
+        String::from(r"\*\*\*\*\*\* HEOПИCAHHЫЙ ИДEHTИФИKATOP:"),
+        String::from(r"^ \*\*\*\*\*\*\d+ "),
+        String::from(r"^HEOП MET "),
+        String::from(r"^ERROR \d+"),
+        String::from(r"^ ERROR \d+"),
+    ];
+
+    // Create a vector of compiled regex patterns
+    let regexes: Vec<Regex> = patterns
+        .into_iter()
+        .map(|p| Regex::new(&p).expect("Invalid regex pattern"))
+        .collect();
+
+    // Open the file and create a buffered reader - panic on error
+    let file = fs::File::open(file_path).unwrap_or_else(|e|
+        panic!("Failed to open file {}: {}", file_path, e)
+    );
+    let reader = BufReader::new(file);
+
+    // Flag to track if any matches were found
+    let mut has_matches = false;
+
+    // Process each line - panic on read error
+    for (_line_num, line) in reader.lines().enumerate() {
+        let line = line.unwrap_or_else(|e|
+            panic!("Failed to read line from {}: {}", file_path, e)
+        );
+        for regex in &regexes {
+            if regex.is_match(&line) {
+                println!("{}", line);
+                has_matches = true;
+                break; // Move to next line after first match
+            }
+        }
+    }
+    has_matches
 }
 
 //
@@ -153,7 +206,10 @@ pub fn compile_files(options: &CompilerOptions) {
         panic!("Dubna failed with status: {}", status)
     }
 
-    //TODO: Scan listing and find compilation errors.
+    // Scan listing and find compilation errors.
+    if search_errors_in_listing(&listing_file, &options) {
+        panic!("---\nCompilation failed!\nSee details in {}", listing_file);
+    }
 
     // Copy output.bin to output_file.
     let output = fs::File::create(&output_file)

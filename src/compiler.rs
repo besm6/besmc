@@ -187,6 +187,10 @@ pub fn compile_files(options: &CompilerOptions) {
         }
     }
 
+    // Set single-page listing mode.
+    writeln!(script, "*call setftn:one,long")
+        .unwrap_or_else(|e| { panic!("Failed to write build.dub: {}", e); });
+
     // Write contents of each source file
     perso_index = 0o40;
     for file in &options.files {

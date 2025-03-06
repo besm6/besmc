@@ -104,6 +104,7 @@ fn search_errors_in_listing(file_path: &str, _options: &CompilerOptions) -> bool
         String::from(r"OTCYTCTBYET ИMЯ ПPOГPAMMЫ"),
         String::from(r"OTCYTCTBYET ИMЯ ПOДПPOГPAMMЫ"),
         String::from(r"OTCYTCTBYET ЗAГOЛOBOK ПOДПPOГPAMMЫ"),
+        String::from(r"OTCYTCTBYET  PROGRAM"),
         String::from(r"ЗHAЧEH.* HE OПPEДEЛEHO"),
         String::from(r"INCORRECT ALGOL PROGRAM"),
         String::from(r"\*\*\*\*\*\*HEOПИCAHHЫЙ ИДEHTИФИKATOP"),

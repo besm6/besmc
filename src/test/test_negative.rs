@@ -70,6 +70,18 @@ fn test_assem_undefined_identifier() {
 }
 
 #[test]
+fn test_assem_absent_program() {
+    let contents = " main: ,name,
+        ,*74,
+        ,end,
+";
+    compile_exe_negative(contents, "target/assem_absent_program.assem");
+
+    // Error messages:
+    // OTCYTCTBYET  PROGRAM
+}
+
+#[test]
 fn test_madlen_no_header() {
     let contents = "        ,end,
 ";

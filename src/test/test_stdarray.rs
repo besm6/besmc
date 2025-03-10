@@ -18,7 +18,7 @@ fn test_stdarray_exe() {
     };
     compile_files(&options);
 
-    assert_eq!(find_line_starting_with("target/hello_std.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  001 01");
+    assert_eq!(find_line_starting_with("target/hello_std.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  002 17");
 }
 
 //

@@ -210,6 +210,7 @@ pub fn compile_files(options: &CompilerOptions) {
                                     .unwrap_or_else(|e| { panic!("Failed to write *perso: {}", e); });
                                 perso_index += 1;
                             },
+                "std"     => copy_file(&script, &file, ""),
                 "exe"     => panic!("Cannot process executable file: {}", file),
                 _         => panic!("Unknown file extension: {}", file),
             }

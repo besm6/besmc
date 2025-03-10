@@ -2,17 +2,16 @@ use crate::*;
 use crate::test::*;
 
 //
-// Compile file hello.std into hello_std.exe
+// Compile file stdarray.std into hello_std.exe
 //
-// File hello.std can be created from examples/hello.pascal
+// File stdarray.std can be created from examples/hello.pascal
 // by commands:
-//      pascompl -P hello.pascal
-//      mv output.obj hello.std
+//      pascompl -P hello.pascal stdarray.std
 //
 #[test]
 fn test_stdarray_exe() {
     let options = CompilerOptions {
-        files: vec!["examples/hello.std".to_string()],
+        files: vec!["examples/stdarray.std".to_string()],
         output_file: Some("target/hello_std.exe".to_string()),
         ..Default::default()
     };
@@ -22,12 +21,12 @@ fn test_stdarray_exe() {
 }
 
 //
-// Compile file hello.std into lib_stdarray.obj
+// Compile file stdarray.std into lib_stdarray.obj
 //
 #[test]
 fn test_stdarray_obj() {
     let options = CompilerOptions {
-        files: vec!["examples/hello.std".to_string()],
+        files: vec!["examples/stdarray.std".to_string()],
         output_file: Some("target/lib_stdarray.obj".to_string()),
         stop_at_object: true,
         ..Default::default()

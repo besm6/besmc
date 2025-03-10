@@ -154,8 +154,9 @@ fn search_errors_in_listing(file_path: &str, _options: &CompilerOptions) -> bool
 pub fn compile_files(options: &CompilerOptions) {
 
     // The first source file defines names of output binary and listing.
+    let first_file = &options.files[0];
     let output_option = options.output_file.clone()
-                               .unwrap_or(options.files[0].clone());
+                               .unwrap_or(first_file.clone());
     let output_path = Path::new(&output_option);
     let output_extension = if options.stop_at_object { "obj" } else { "exe" };
     let output_file = output_path.with_extension(output_extension).to_string_lossy().into_owned();
@@ -168,6 +169,28 @@ pub fn compile_files(options: &CompilerOptions) {
         script_file.clone(),
     ];
 
+    // For each *.pas input, call pascompl and replace with *.std.
+    let mut input_files = options.files.clone();
+    for file in input_files.iter_mut() {
+        if has_extension(&file, ".pas") {
+            let path = Path::new(file);
+            let std_file = path.with_extension("std").to_string_lossy().into_owned();
+
+            // Run Pascal compiler.
+            let status = Command::new("pascompl")
+                                 .arg("-P")
+                                 .arg(&file)
+                                 .arg(&std_file)
+                                 .status()
+                                 .unwrap_or_else(|e| { panic!("Failed to execute pascompl: {}", e); });
+            if !status.success() {
+                panic!("Pascal compiler failed on {} with status: {}", file, status)
+            }
+            *file = std_file.clone();
+            files_to_remove.push(std_file);
+        }
+    }
+
     // Create script for Dubna.
     let mut script = fs::File::create(&script_file)
                               .unwrap_or_else(|e| { panic!("Failed to create build.dub: {}", e); });
@@ -178,7 +201,7 @@ pub fn compile_files(options: &CompilerOptions) {
 
     // Add *file:persNN directive for each .obj file.
     let mut perso_index = 0o40;
-    for file in &options.files {
+    for file in &input_files {
         let path = Path::new(file);
         if let Some(ext) = path.extension() {
             if ext.to_string_lossy().as_ref() == "obj" {
@@ -193,7 +216,7 @@ pub fn compile_files(options: &CompilerOptions) {
 
     // Write contents of each source file
     perso_index = 0o40;
-    for file in &options.files {
+    for file in &input_files {
         let path = Path::new(file);
         if let Some(ext) = path.extension() {
             match ext.to_string_lossy().as_ref() {
@@ -227,7 +250,7 @@ pub fn compile_files(options: &CompilerOptions) {
             .unwrap_or_else(|e| { panic!("Failed to write {}: {}", script_file, e); });
     } else {
         // Create executable binary (overlay).
-        let entry = if has_extension(&options.files[0], ".bemsh") { "main" } else { "program" };
+        let entry = if has_extension(&first_file, ".bemsh") { "main" } else { "program" };
         writeln!(script, "*library:22\n\
                           *call overlay\n\
                           {}\n\

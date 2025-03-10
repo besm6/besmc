@@ -36,6 +36,7 @@ struct CompilerOptions {
                  *.forex   - Forex\n\
                  *.algol   - Algol-ГДP\n\
                  *.pascal  - Pascal\n\
+                 *.pas     - Pascal-re\n\
                  *.assem   - Assembler Madlen\n\
                  *.madlen  - Assembler Madlen-3.5\n\
                  *.bemsh   - Assembler БЕМШ\n\

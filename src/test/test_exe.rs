@@ -96,3 +96,15 @@ fn test_pascal_exe() {
 
     assert_eq!(find_line_starting_with("target/hello_pascal.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  002 17");
 }
+
+#[test]
+fn test_pas_exe() {
+    let options = CompilerOptions {
+        output_file: Some("target/hello_pas.exe".to_string()),
+        files: vec!["examples/hello.pas".to_string()],
+        ..Default::default()
+    };
+    compile_files(&options);
+
+    assert_eq!(find_line_starting_with("target/hello_pas.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  002 17");
+}

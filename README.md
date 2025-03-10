@@ -19,6 +19,7 @@ Arguments:
               *.forex   - Forex
               *.algol   - Algol-ГДP
               *.pascal  - Pascal
+              *.pas     - Pascal-re
               *.assem   - Assembler Madlen
               *.madlen  - Assembler Madlen-3.5
               *.bemsh   - Assembler БЕМШ

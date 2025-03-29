@@ -40,7 +40,8 @@ struct CompilerOptions {
                  *.assem   - Assembler Madlen\n\
                  *.madlen  - Assembler Madlen-3.5\n\
                  *.bemsh   - Assembler БЕМШ\n\
-                 *.obj     - Object Library (*perso)"
+                 *.obj     - Object Library (*perso)\n\
+                 *.std     - Standard array (*punch)"
     )]
     files: Vec<String>,
 }

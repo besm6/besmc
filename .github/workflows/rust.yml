@@ -17,7 +17,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Dubna
-      run: git clone https://github.com/besm6/dubna.git && make -C dubna install
+      run: >-
+        git clone https://github.com/besm6/dubna.git &&
+        make -C dubna install
+    - name: Pascompl
+      run: >-
+        git clone https://github.com/besm6/pascal-re.git &&
+        make -C pascal-re pascompl &&
+        install -v pascal-re/pascompl /usr/local/bin/pascompl
     - name: Build
       run: cargo build --verbose
     - name: Run tests

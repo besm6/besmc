@@ -115,6 +115,7 @@ fn search_errors_in_listing(file_path: &str, _options: &CompilerOptions) -> bool
         String::from(r"^ ERROR \d+"),
         String::from(r"OTCYTCTBYET"),
         String::from(r"HEДOПYCTИMЫЙ OПEPATOP:"),
+        String::from(r"ДЛИHHЫЙ AДPEC B"),
     ];
 
     // Create a vector of compiled regex patterns

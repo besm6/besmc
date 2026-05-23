@@ -213,6 +213,14 @@ pub fn compile_files(options: &CompilerOptions) {
         }
     }
 
+    // Add B language tape and library if any .b file is present.
+    let has_b_files = input_files.iter().any(|f| has_extension(f, ".b"));
+    if has_b_files {
+        writeln!(script, "*tape:7/b,40\n\
+                          *library:40")
+            .unwrap_or_else(|e| { panic!("Failed to write build.dub: {}", e); });
+    }
+
     // Set single-page listing mode.
     writeln!(script, "*call setftn:one,long")
         .unwrap_or_else(|e| { panic!("Failed to write build.dub: {}", e); });
@@ -231,6 +239,7 @@ pub fn compile_files(options: &CompilerOptions) {
                 "assem"   => copy_file(&script, &file, "*assem\n"),
                 "madlen"  => copy_file(&script, &file, "*madlen\n"),
                 "bemsh"   => copy_file(&script, &file, "*bemsh\n"),
+                "b"       => copy_file(&script, &file, "*trans-main:40020\n"),
                 "obj"     => {
                                 writeln!(&script, "*call perso:{:o},cont", perso_index)
                                     .unwrap_or_else(|e| { panic!("Failed to write *perso: {}", e); });

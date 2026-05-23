@@ -2,6 +2,18 @@ use crate::*;
 use crate::test::*;
 
 #[test]
+fn test_b_exe() {
+    let options = CompilerOptions {
+        output_file: Some("target/hello_b.exe".to_string()),
+        files: vec!["examples/hello.b".to_string()],
+        ..Default::default()
+    };
+    compile_files(&options);
+
+    assert_eq!(find_line_starting_with("target/hello_b.lst", " ДЛИHA БИБЛИOTEKИ"), " ДЛИHA БИБЛИOTEKИ  001 30");
+}
+
+#[test]
 fn test_algol_exe() {
     let options = CompilerOptions {
         output_file: Some("target/hello_algol.exe".to_string()),

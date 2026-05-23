@@ -92,44 +92,6 @@ HELLO, PASCAL!
 
 ---
 
-## Pre-processed Pascal — `stdarray.std`
-
-This file is the pre-compiled output of `pascompl` — the binary "standard array" format
-that Pascal-re programs are translated into before the BESM-6 Pascal compiler processes them.
-Compiling a `.pas` file produces this format automatically as an intermediate step;
-`stdarray.std` is a copy that has been saved for direct use.
-
-The file was created with:
-
-```sh
-pascompl -P hello.pascal stdarray.std
-```
-
-The first few lines show the octal-encoded binary format:
-
-```text
-`77761 PROGRAM  1
-`5541515600000000
-`2000000000000000
-`6062574762415500
-...
-```
-
-**Compile and run:**
-
-```sh
-besmc stdarray.std
-./stdarray.exe
-```
-
-**Program output:**
-
-```text
-HELLO, PASCAL!
-```
-
----
-
 ## Algol-ГДP — `hello.algol`
 
 Algol 60 was one of the first languages implemented on BESM-6. The "ГДP" (GDR) designation
@@ -492,6 +454,79 @@ MAIN     HAM=01000   ДЛИHA MOДЛ=00001  ДЛИHA ПPOГ=00010 BXOДH=00001
 
 ```text
 HELLO, BEMSH!
+```
+
+---
+
+## B — `hello.b`
+
+B is the predecessor of C, designed by Ken Thompson at Bell Labs around 1969. **The B
+compiler for BESM-6 is a modern port** — it was not available on the original hardware.
+It is distributed as part of the Dubna simulator toolkit.
+
+```c
+main() {
+    printf("Hello, B!*n");
+}
+```
+
+**Syntax notes:**
+
+- Functions are written in the classic B / early-C style: no return-type declaration, braces
+  for the body.
+- The newline escape is **`*n`** (not `\n` as in C) — this is the standard B escape character.
+- `printf` works like its C counterpart for simple string output.
+
+**Compile and run:**
+
+```sh
+besmc hello.b
+./hello.exe
+```
+
+**Compiler listing excerpt** (`hello.lst`):
+
+```text
+...
+ ДЛИHA БИБЛИOTEKИ  001 30
+```
+
+**Program output:**
+
+```text
+HELLO, B!
+```
+
+---
+
+## Object modules — `stdarray.std`
+
+This file is the binary "standard array" format that routines are translated into
+before the linker compiles them together.
+Compiling a program with any compiler produces this format automatically;
+`stdarray.std` is a copy that has been saved for direct use.
+
+The first few lines show the octal-encoded binary format:
+
+```text
+`77761 PROGRAM  1
+`5541515600000000
+`2000000000000000
+`6062574762415500
+...
+```
+
+**Compile and run:**
+
+```sh
+besmc stdarray.std
+./stdarray.exe
+```
+
+**Program output:**
+
+```text
+HELLO, PASCAL!
 ```
 
 ---

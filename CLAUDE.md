@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-`besmc` is a compiler frontend for the BESM-6 Soviet mainframe. It accepts source files in various languages (Algol, Fortran, Pascal, and assemblers) and produces BESM-6 executables or object files. The backend is the [`dubna`](https://github.com/besm6/dubna/) simulator, which runs the native BESM-6 compilers internally.
+`besmc` is a compiler frontend for the BESM-6 Soviet mainframe. It accepts source files in various languages (Algol, Fortran, Pascal, B, and assemblers) and produces BESM-6 executables or object files. The backend is the [`dubna`](https://github.com/besm6/dubna/) simulator, which runs the native BESM-6 compilers internally.
 
 External tools required at runtime:
 - `dubna` — the BESM-6 simulator (must be installed and on `$PATH`)
@@ -40,7 +40,8 @@ All compilation logic lives in `compile_files()`:
 1. **`.pas` pre-processing** — For each `*.pas` input, runs `pascompl -P <file> <file.std>` and substitutes the `*.std` path in the file list.
 2. **Dubna script generation** — Writes a `*.dub` script that the `dubna` simulator will interpret:
    - `*file:persNN` directives map object files to virtual "perso" devices (octal addresses 40–57).
-   - Each source file is embedded inline with its language directive (`*ftn`, `*pascal`, `*algol`, `*madlen`, `*bemsh`, etc.) or included via `*call perso:NN,cont` for `.obj` files.
+   - When any `.b` source is present, `*tape:7/b,40` and `*library:40` are inserted before `*call setftn` to load the B compiler tape and runtime library.
+   - Each source file is embedded inline with its language directive (`*ftn`, `*pascal`, `*algol`, `*madlen`, `*bemsh`, `*trans-main:40020` for B, etc.) or included via `*call perso:NN,cont` for `.obj` files.
    - The final step is either `*call to perso:60` (for `-c` / object output) or `*library:22` + `*call overlay` + entry point (for executable output).
 3. **Running Dubna** — Invokes `dubna <script.dub>` with stdout redirected to the listing file (`*.lst`).
 4. **Error detection** — `search_errors_in_listing()` scans the listing with a set of compiled regex patterns for Russian-language BESM-6 error messages. Any match causes a compilation failure.
@@ -82,6 +83,7 @@ Working examples for every language are in [examples/](examples/) — see [examp
 | `.assem` | Assembler Madlen (`*assem`) |
 | `.madlen` | Assembler Madlen-3.5 (`*madlen`) |
 | `.bemsh` | Assembler БЕМШ (`*bemsh`) |
+| `.b` | B language (`*trans-main:40020`; requires `*tape:7/b,40` preamble; modern port, not original BESM-6) |
 | `.obj` | Object library (`*call perso:NN,cont`) |
 | `.std` | Standard array output of `pascompl` (passed through verbatim) |
 

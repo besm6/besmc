@@ -4,7 +4,8 @@
 
 **BESM-6** was a Soviet mainframe computer produced from the late 1960s through the 1980s.
 It was one of the most powerful computers of its era in the Eastern Bloc, and it supported
-a rich set of programming languages: Algol, Fortran, Pascal, and several assemblers.
+a rich set of programming languages: Algol, Fortran, Pascal, and several assemblers. A modern
+port of the B language (the predecessor of C) is also supported.
 
 **`besmc`** is a command-line tool that lets you write programs in those same languages on
 a modern computer and compile them into BESM-6 executables. Under the hood it uses the
@@ -81,6 +82,7 @@ HELLO, PASCAL!
 | `.assem` | Assembler Madlen |
 | `.madlen` | Assembler Madlen-3.5 |
 | `.bemsh` | Assembler БЕМШ (source code written in Cyrillic) |
+| `.b` | B (modern port) |
 | `.obj` | Pre-compiled object library (for linking) |
 
 Working "Hello, World!" examples for every language are in the [examples/](examples/) directory,
@@ -162,7 +164,7 @@ make test
 You should see all tests pass:
 
 ```text
-running 51 tests
+running 52 tests
 test test::test_exe::test_pascal_exe ... ok
 test test::test_exe::test_fortran_exe ... ok
 ...

@@ -1,77 +1,112 @@
-The `besmc` command is a compiler fontend for BESM-6 machine.
-It translates Algol, Fortran or Pascal source code into executable programs.
-It also supports assemblers Madlen and БЕМШ.
-On the backend, the `dubna` simulator runs native BESM-6 compilers.
+# besmc — BESM-6 Compiler Frontend
 
-## Basic Usage ##
+## What is this?
 
-The general syntax is:
+**BESM-6** was a Soviet mainframe computer produced from the late 1960s through the 1980s.
+It was one of the most powerful computers of its era in the Eastern Bloc, and it supported
+a rich set of programming languages: Algol, Fortran, Pascal, and several assemblers.
+
+**`besmc`** is a command-line tool that lets you write programs in those same languages on
+a modern computer and compile them into BESM-6 executables. Under the hood it uses the
+[dubna](https://github.com/besm6/dubna/) simulator, which runs the original BESM-6 compilers
+exactly as they ran on the real hardware.
+
+## Prerequisites
+
+Before you can use `besmc` you need two things installed:
+
+1. **The dubna simulator** — download and install it from
+   [github.com/besm6/dubna](https://github.com/besm6/dubna/).
+   The `dubna` command must be on your `$PATH`.
+
+2. **The Rust compiler** — needed only to build `besmc` itself.
+   Install it from [rust-lang.org/tools/install](https://www.rust-lang.org/tools/install).
+
+## Build and Install
+
+```sh
+make
+make install
 ```
-$ besmc
-BESM-6 compiler frontend
 
-Usage: besmc [OPTIONS] [FILES]...
+The `besmc` binary is installed to `~/.cargo/bin/besmc`.
 
-Arguments:
-  [FILES]...  Input sources and object files:
-              *.ftn     - Fortran-ГДP
-              *.fortran - Fortran Dubna
-              *.forex   - Forex
-              *.algol   - Algol-ГДP
-              *.pascal  - Pascal
-              *.pas     - Pascal-re
-              *.assem   - Assembler Madlen
-              *.madlen  - Assembler Madlen-3.5
-              *.bemsh   - Assembler БЕМШ
-              *.obj     - Object Library (*perso)
+## Quick Start
 
-Options:
-  -o, --output <FILE>  Output file name
-  -c, --compile        Compile only to object files
-  -t, --save-temps     Keep intermediate files
-  -h, --help           Print help
-```
-To use `besmc` you need [dubna](https://github.com/besm6/dubna/) installed.
+Save this Pascal program as `hello.pascal`:
 
-## Example ##
-For a simple "Hello, World!" program in a file called `hello.pascal`:
-```
+```pascal
 program main(output);
 _(
     writeln('Hello, Pascal!');
     stop;
 _).
 ```
-Run:
 
-    besmc hello.pascal
+> **Note:** This Pascal dialect uses `_(` and `_).` as block delimiters instead of the
+> usual `begin` / `end`.
 
-Then execute the program:
+Compile it:
 
-    $ ./hello.exe
-    HELLO, PASCAL!
-
-When compiling the program, a listing file is also generated, with `.lst` extension.
-For the above example, it would be [hello.lst](https://gist.github.com/sergev/564571bd708d2d016892143270aad968).
-
-More examples are available:
-
- * [examples/hello.algol](examples/hello.algol)
- * [examples/hello.assem](examples/hello.assem)
- * [examples/hello.bemsh](examples/hello.bemsh)
- * [examples/hello.forex](examples/hello.forex)
- * [examples/hello.fortran](examples/hello.fortran)
- * [examples/hello.ftn](examples/hello.ftn)
- * [examples/hello.madlen](examples/hello.madlen)
- * [examples/hello.pascal](examples/hello.pascal)
-
-## Mixed-language programming ##
-
-A compilation of different languages into one program is possible.
-For example, consider a Pascal program which calls a Fortran routine.
-
-Caller in Pascal:
+```sh
+besmc hello.pascal
 ```
+
+Two files are created:
+
+| File | What it is |
+| --- | --- |
+| `hello.exe` | The executable program |
+| `hello.lst` | The compiler listing (output from the BESM-6 compiler, useful for diagnosing errors) |
+
+Run the program:
+
+```sh
+$ ./hello.exe
+HELLO, PASCAL!
+```
+
+## Supported Languages
+
+`besmc` recognises the following file extensions:
+
+| Extension | Language |
+| --- | --- |
+| `.pascal` | Pascal |
+| `.pas` | Pascal-re (requires `pascompl` on your `$PATH`) |
+| `.ftn` | Fortran-ГДP |
+| `.fortran` | Fortran Dubna |
+| `.forex` | Forex |
+| `.algol` | Algol-ГДP |
+| `.assem` | Assembler Madlen |
+| `.madlen` | Assembler Madlen-3.5 |
+| `.bemsh` | Assembler БЕМШ (source code written in Cyrillic) |
+| `.obj` | Pre-compiled object library (for linking) |
+
+Working "Hello, World!" examples for every language are in the [examples/](examples/) directory,
+with detailed explanations in [examples/README.md](examples/README.md).
+
+## Compiling to an Object File
+
+By default `besmc` produces a ready-to-run `.exe`. If you want to compile a source file
+without linking it (for example, to combine it later with code written in another language),
+use the `-c` flag:
+
+```sh
+besmc -c hello.pascal
+```
+
+This produces `hello.obj` instead of `hello.exe`. Object files can be passed to a later
+`besmc` invocation for linking.
+
+## Mixed-Language Programs
+
+One of BESM-6's strengths was that programs could freely mix languages — a Pascal main
+program could call a Fortran subroutine, for instance. Here is how to do that with `besmc`.
+
+**Step 1 — Write the Pascal main program** (`caller.pascal`):
+
+```pascal
 program main (output);
 procedure hello; fortran;
 _(
@@ -79,52 +114,57 @@ _(
     stop;
 _).
 ```
-Routine in Fortran:
-```
+
+The `procedure hello; fortran;` declaration tells the Pascal compiler that `hello` is
+implemented in Fortran.
+
+**Step 2 — Write the Fortran subroutine** (`callee.ftn`):
+
+```fortran
         subroutine hello
         print 1000
  1000   format('Hello Fortran from Pascal!')
         end
 ```
-Compile and run:
 
-    $ besmc -c caller.pascal
-    $ besmc -c callee.ftn
-    $ besmc caller.obj callee.obj
-    $ ./caller.exe
-    HELLO FORTRAN FROM PASCAL!
+**Step 3 — Compile each file separately, then link them together**:
 
-## Build and install ##
-
-To build besmc you must have the Rust compiler available.
-For information on how to install the Rust compiler, see:
-[rust-lang.org](https://www.rust-lang.org/tools/install).
-
-Run:
-
-    make
-    make install
-
-The binary will be installed as `$HOME/.cargo/bin/besmc`.
-
-## Tests ##
-
-To validate the compiler, run:
-
-    make test
-
-You should see:
+```sh
+besmc -c caller.pascal          # produces caller.obj
+besmc -c callee.ftn             # produces callee.obj
+besmc caller.obj callee.obj     # links both into caller.exe
 ```
-$ make test
-cargo test -- --test-threads=1
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s
-     Running unittests src/main.rs (target/debug/deps/besmc-11b48d6255548305)
 
+Run the result:
+
+```sh
+$ ./caller.exe
+HELLO FORTRAN FROM PASCAL!
+```
+
+## Command-Line Options
+
+| Option | Description |
+| --- | --- |
+| `-c` / `--compile` | Compile to an object file (`.obj`); do not link |
+| `-o FILE` / `--output FILE` | Set the output file name (default: derived from the first input file) |
+| `-t` / `--save-temps` | Keep intermediate files (`.dub` script, `output.bin`, `persNN.bin`) |
+| `-h` / `--help` | Print help |
+
+## Running the Tests
+
+To verify that everything is working:
+
+```sh
+make test
+```
+
+You should see all tests pass:
+
+```text
 running 51 tests
-test test::test_exe::test_algol_exe ... ok
-test test::test_exe::test_assem_exe ... ok
+test test::test_exe::test_pascal_exe ... ok
+test test::test_exe::test_fortran_exe ... ok
 ...
-test test::test_pascal_to_fortran::test_pascal_to_fortran ... ok
-
-test result: ok. 51 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.16s
+test result: ok. 51 passed; 0 failed; 0 ignored
 ```

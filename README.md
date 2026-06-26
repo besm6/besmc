@@ -12,25 +12,58 @@ a modern computer and compile them into BESM-6 executables. Under the hood it us
 [dubna](https://github.com/besm6/dubna/) simulator, which runs the original BESM-6 compilers
 exactly as they ran on the real hardware.
 
+In short: you write a program in one of the old BESM-6 languages, run `besmc yourprogram.pascal`,
+and get a runnable `yourprogram.exe` — no real BESM-6 mainframe required.
+
+## Contents
+
+- [Prerequisites](#prerequisites)
+- [Build and Install](#build-and-install)
+- [Quick Start](#quick-start)
+- [Supported Languages](#supported-languages)
+- [Compiling to an Object File](#compiling-to-an-object-file)
+- [Mixed-Language Programs](#mixed-language-programs)
+- [Command-Line Options](#command-line-options)
+- [Troubleshooting](#troubleshooting)
+- [Running the Tests](#running-the-tests)
+
 ## Prerequisites
 
-Before you can use `besmc` you need two things installed:
+Before you can use `besmc` you need these installed:
 
 1. **The dubna simulator** — download and install it from
    [github.com/besm6/dubna](https://github.com/besm6/dubna/).
-   The `dubna` command must be on your `$PATH`.
+   The `dubna` command must be on your `$PATH`. This is the engine that actually runs the
+   BESM-6 compilers and your compiled programs, so it is required at all times.
 
 2. **The Rust compiler** — needed only to build `besmc` itself.
    Install it from [rust-lang.org/tools/install](https://www.rust-lang.org/tools/install).
 
+3. **`pascompl`** — *only* needed if you compile `.pas` (Pascal-re) files. If you never use
+   the `.pas` extension you can skip this one. It must also be on your `$PATH`.
+
 ## Build and Install
 
+Get the source, build it, and install the command:
+
 ```sh
+git clone https://github.com/besm6/besmc.git
+cd besmc
 make
 make install
 ```
 
 The `besmc` binary is installed to `~/.cargo/bin/besmc`.
+
+**If you later type `besmc` and see `command not found`**, that directory is not on your
+`$PATH`. Add it once:
+
+```sh
+export PATH="$HOME/.cargo/bin:$PATH"
+```
+
+To make it permanent, add that same line to the end of your shell's startup file —
+`~/.bashrc` for bash or `~/.zshrc` for zsh — then open a new terminal.
 
 ## Quick Start
 
@@ -66,6 +99,11 @@ Run the program:
 $ ./hello.exe
 HELLO, PASCAL!
 ```
+
+> **What is that `.exe`?** Despite the name, it is **not** a Windows program. It is a tiny
+> text script that begins with the line `#!/usr/bin/env dubna`, so running it simply hands it
+> to the `dubna` simulator. It runs on any system (Linux, macOS, …) where `dubna` is installed,
+> and you can also run it explicitly with `dubna hello.exe`.
 
 ## Supported Languages
 
@@ -144,6 +182,8 @@ $ ./caller.exe
 HELLO FORTRAN FROM PASCAL!
 ```
 
+> **Note:** You can list up to 16 object files in a single linking command.
+
 ## Command-Line Options
 
 | Option | Description |
@@ -152,6 +192,19 @@ HELLO FORTRAN FROM PASCAL!
 | `-o FILE` / `--output FILE` | Set the output file name (default: derived from the first input file) |
 | `-t` / `--save-temps` | Keep intermediate files (`.dub` script, `output.bin`, `persNN.bin`) |
 | `-h` / `--help` | Print help |
+
+## Troubleshooting
+
+| Message you see | What it means and how to fix it |
+| --- | --- |
+| `dubna: command not found` | The dubna simulator is not installed or not on your `$PATH`. Install it from [github.com/besm6/dubna](https://github.com/besm6/dubna/) and make sure the `dubna` command works in your terminal. |
+| `besmc: command not found` | The `besmc` binary is not on your `$PATH`. Add `~/.cargo/bin` to it — see [Build and Install](#build-and-install). |
+| `Failed to execute pascompl` | You are compiling a `.pas` file but `pascompl` is not installed. Install it and put it on your `$PATH`, or use the `.pascal` extension instead, which does not need it. |
+| `Compilation failed! See details in <name>.lst` | Your source code has an error. Open the `<name>.lst` listing file to find it. The BESM-6 compilers report errors in Russian (for example, lines containing `OШИБ` mean "errors"); the annotated listings in [examples/README.md](examples/README.md) show what a clean listing looks like for each language. |
+
+**Tip:** When something goes wrong and you want to look under the hood, add `-t`
+(`--save-temps`). `besmc` will then keep the intermediate files — including the generated
+`*.dub` script that it feeds to dubna — instead of deleting them.
 
 ## Running the Tests
 

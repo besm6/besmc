@@ -33,6 +33,6 @@ jobs:
       run: >-
         git clone https://github.com/besm6/c-compiler.git &&
         make -C c-compiler &&
-        cmake --install c-compiler/build --prefix /usr/local
+        cmake --install c-compiler/build --prefix $HOME/.local
     - name: Run tests
       run: cargo test --verbose -- --test-threads=1

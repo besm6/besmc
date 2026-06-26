@@ -94,6 +94,65 @@ fn has_extension(filename: &str, ext_with_dot: &str) -> bool {
     filename.to_lowercase().ends_with(&ext_lower)
 }
 
+//
+// Base directories where the BESM-6 C toolchain (headers and libc) is installed.
+// Probed in order; the first existing match wins.
+//
+fn besm6_share_dirs() -> Vec<String> {
+    let mut dirs = Vec::new();
+    if let Ok(home) = std::env::var("HOME") {
+        dirs.push(format!("{}/.local/share/besm6", home));
+    }
+    dirs.push("/usr/local/share/besm6".to_string());
+    dirs.push("/usr/share/besm6".to_string());
+    dirs
+}
+
+//
+// Locate the directory with BESM-6 C header files (*.h).
+// Panic with a helpful message if not found.
+//
+fn find_besm6_include_dir() -> String {
+    let mut probed = Vec::new();
+    for base in besm6_share_dirs() {
+        let dir = format!("{}/include", base);
+        if Path::new(&dir).is_dir() {
+            return dir;
+        }
+        probed.push(dir);
+    }
+    panic!("BESM-6 C headers not found. Looked in:\n  {}", probed.join("\n  "));
+}
+
+//
+// Locate the BESM-6 libc binary (libc.bin).
+// Panic with a helpful message if not found.
+//
+fn find_libc_path() -> String {
+    let mut probed = Vec::new();
+    for base in besm6_share_dirs() {
+        let lib = format!("{}/lib/libc.bin", base);
+        if Path::new(&lib).is_file() {
+            return lib;
+        }
+        probed.push(lib);
+    }
+    panic!("BESM-6 libc.bin not found. Looked in:\n  {}", probed.join("\n  "));
+}
+
+//
+// Run a compiler pass and panic if it fails.
+//
+fn run_pass(program: &str, args: &[&str]) {
+    let status = Command::new(program)
+                         .args(args)
+                         .status()
+                         .unwrap_or_else(|e| { panic!("Failed to execute {}: {}", program, e); });
+    if !status.success() {
+        panic!("{} failed with status: {}", program, status);
+    }
+}
+
 // Function to search for patterns in a file
 fn search_errors_in_listing(file_path: &str, _options: &CompilerOptions) -> bool {
 
@@ -194,6 +253,61 @@ pub fn compile_files(options: &CompilerOptions) {
         }
     }
 
+    // Remember whether any C source is present: after pre-processing below, the C
+    // files become *.madlen and can no longer be told apart from hand-written ones,
+    // but their presence decides whether libc must be linked in.
+    let has_c_files = options.files.iter().any(|f| has_extension(f, ".c"));
+
+    // For each *.c input, run the C compiler pipeline and replace with *.madlen:
+    //   1. cpp    -E -nostdinc -I <include_dir>  xxx.c   -> xxx.i
+    //   2. b6parse                               xxx.i   -> xxx.asn
+    //   3. b6lower                               xxx.asn -> xxx.tac
+    //   4. b6codegen                             xxx.tac -> xxx.madlen
+    // The resulting *.madlen is then assembled through the usual *madlen path.
+    let mut include_dir = String::new();
+    for file in input_files.iter_mut() {
+        if has_extension(&file, ".c") {
+            if include_dir.is_empty() {
+                include_dir = find_besm6_include_dir();
+            }
+            // Derive intermediate names by appending to the full source name
+            // (e.g. hello.c -> hello.c.i ... hello.c.madlen). This keeps the final
+            // ".madlen" extension so it routes through the normal *madlen path, while
+            // never clobbering an unrelated hand-written "hello.madlen" next to it.
+            let i_file      = format!("{}.i", file);
+            let asn_file    = format!("{}.asn", file);
+            let tac_file    = format!("{}.tac", file);
+            let madlen_file = format!("{}.madlen", file);
+
+            // Use the traditional positional "cpp [options] infile outfile" form with a
+            // joined -I<dir>: when /usr/bin/cpp is clang (e.g. macOS), the -o and spaced
+            // -I forms are misparsed, while this form works on both GNU cpp and clang.
+            let inc_flag = format!("-I{}", include_dir);
+            run_pass("cpp", &["-E", "-nostdinc", &inc_flag, &file, &i_file]);
+            run_pass("b6parse", &[&i_file, &asn_file]);
+            run_pass("b6lower", &[&asn_file, &tac_file]);
+            run_pass("b6codegen", &[&tac_file, &madlen_file]);
+
+            *file = madlen_file.clone();
+            files_to_remove.push(i_file);
+            files_to_remove.push(asn_file);
+            files_to_remove.push(tac_file);
+            files_to_remove.push(madlen_file);
+        }
+    }
+
+    // When linking C code, mount libc as a virtual disk file. The library lives
+    // outside the working directory, so create a temporary symlink to it here
+    // (dubna reads 'libc.bin' from the current directory for *file:libc).
+    let link_libc = has_c_files && !options.stop_at_object;
+    if link_libc {
+        let libc_path = find_libc_path();
+        remove_file("libc.bin");
+        std::os::unix::fs::symlink(&libc_path, "libc.bin")
+            .unwrap_or_else(|e| { panic!("Failed to create libc.bin symlink to {}: {}", libc_path, e); });
+        files_to_remove.push("libc.bin".to_string());
+    }
+
     // Create script for Dubna.
     let mut script = fs::File::create(&script_file)
                               .unwrap_or_else(|e| { panic!("Failed to create build.dub: {}", e); });
@@ -201,6 +315,12 @@ pub fn compile_files(options: &CompilerOptions) {
                       *disc:1/local\n\
                       *file:output,60,w")
         .unwrap_or_else(|e| { panic!("Failed to write build.dub: {}", e); });
+
+    // Mount the C runtime library when linking C code.
+    if link_libc {
+        writeln!(script, "*file:libc,37")
+            .unwrap_or_else(|e| { panic!("Failed to write *file:libc: {}", e); });
+    }
 
     // Add *file:persNN directive for each .obj file.
     let mut perso_index = 0o40;
@@ -263,6 +383,11 @@ pub fn compile_files(options: &CompilerOptions) {
     } else {
         // Create executable binary (overlay).
         let entry = if has_extension(&first_file, ".bemsh") { "main" } else { "program" };
+        // Search the C runtime library before the system library.
+        if link_libc {
+            writeln!(script, "*library:37")
+                .unwrap_or_else(|e| { panic!("Failed to write *library:37: {}", e); });
+        }
         writeln!(script, "*library:22\n\
                           *call overlay\n\
                           {}\n\

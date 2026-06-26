@@ -4,8 +4,8 @@
 
 **BESM-6** was a Soviet mainframe computer produced from the late 1960s through the 1980s.
 It was one of the most powerful computers of its era in the Eastern Bloc, and it supported
-a rich set of programming languages: Algol, Fortran, Pascal, and several assemblers. A modern
-port of the B language (the predecessor of C) is also supported.
+a rich set of programming languages: Algol, Fortran, Pascal, and several assemblers. Modern
+ports of the B language (the predecessor of C) and of C itself are also supported.
 
 **`besmc`** is a command-line tool that lets you write programs in those same languages on
 a modern computer and compile them into BESM-6 executables. Under the hood it uses the
@@ -41,6 +41,16 @@ Before you can use `besmc` you need these installed:
 
 3. **`pascompl`** — *only* needed if you compile `.pas` (Pascal-re) files. If you never use
    the `.pas` extension you can skip this one. It must also be on your `$PATH`.
+
+4. **The BESM-6 C compiler** — *only* needed if you compile `.c` files. Build and install it
+   from [github.com/besm6/c-compiler](https://github.com/besm6/c-compiler/). That provides the
+   three BESM-6 compiler passes `b6parse`, `b6lower`, and `b6codegen` (which must end up on
+   your `$PATH`), together with the BESM-6 C headers and the `libc.bin` runtime library. The
+   headers and library are installed under one of `~/.local/share/besm6/`,
+   `/usr/local/share/besm6/`, or `/usr/share/besm6/` (`include/` for the headers,
+   `lib/libc.bin` for the library); `besmc` finds them automatically. You also need a standard
+   C preprocessor `cpp` on your `$PATH` — the one shipped with your system (GCC or Clang) is
+   fine.
 
 ## Build and Install
 
@@ -121,6 +131,7 @@ HELLO, PASCAL!
 | `.madlen` | Assembler Madlen-3.5 |
 | `.bemsh` | Assembler БЕМШ (source code written in Cyrillic) |
 | `.b` | B (modern port) |
+| `.c` | C (modern port) |
 | `.obj` | Pre-compiled object library (for linking) |
 
 Working "Hello, World!" examples for every language are in the [examples/](examples/) directory,
@@ -200,6 +211,8 @@ HELLO FORTRAN FROM PASCAL!
 | `dubna: command not found` | The dubna simulator is not installed or not on your `$PATH`. Install it from [github.com/besm6/dubna](https://github.com/besm6/dubna/) and make sure the `dubna` command works in your terminal. |
 | `besmc: command not found` | The `besmc` binary is not on your `$PATH`. Add `~/.cargo/bin` to it — see [Build and Install](#build-and-install). |
 | `Failed to execute pascompl` | You are compiling a `.pas` file but `pascompl` is not installed. Install it and put it on your `$PATH`, or use the `.pascal` extension instead, which does not need it. |
+| `Failed to execute cpp` / `b6parse` / `b6lower` / `b6codegen` | You are compiling a `.c` file but part of the C toolchain is missing. Install the BESM-6 C compiler passes and make sure `cpp`, `b6parse`, `b6lower`, and `b6codegen` are all on your `$PATH`. |
+| `BESM-6 C headers not found` / `BESM-6 libc.bin not found` | The BESM-6 C support files are not installed. Put the headers in `<prefix>/share/besm6/include/` and the library in `<prefix>/share/besm6/lib/libc.bin`, where `<prefix>` is `~/.local`, `/usr/local`, or `/usr`. |
 | `Compilation failed! See details in <name>.lst` | Your source code has an error. Open the `<name>.lst` listing file to find it. The BESM-6 compilers report errors in Russian (for example, lines containing `OШИБ` mean "errors"); the annotated listings in [examples/README.md](examples/README.md) show what a clean listing looks like for each language. |
 
 **Tip:** When something goes wrong and you want to look under the hood, add `-t`

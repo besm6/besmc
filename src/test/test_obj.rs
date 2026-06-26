@@ -55,3 +55,8 @@ fn test_madlen_obj() {
 fn test_pascal_obj() {
     compile_obj("examples/hello.pascal", "target/lib_pascal.obj");
 }
+
+#[test]
+fn test_c_obj() {
+    compile_obj("examples/hello.c", "target/lib_c.obj");
+}

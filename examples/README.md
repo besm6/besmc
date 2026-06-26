@@ -499,6 +499,54 @@ HELLO, B!
 
 ---
 
+## C — `hello.c`
+
+C is supported through a **modern port** — it was not available on the original BESM-6
+hardware. Compilation runs the standard C preprocessor (`cpp`) followed by three BESM-6
+compiler passes (`b6parse` → `b6lower` → `b6codegen`) to produce Madlen assembly, which is
+then assembled and linked against `libc.bin`. The headers (e.g. `stdio.h`) and the libc
+runtime ship separately and are found automatically under `~/.local/share/besm6/`,
+`/usr/local/share/besm6/`, or `/usr/share/besm6/`.
+
+```c
+#include <stdio.h>
+
+void program()
+{
+    printf("Hello, C!\n");
+}
+```
+
+**Syntax notes:**
+
+- The program entry point is **`program()`**, not `main()` — `program` is the symbol the
+  BESM-6 overlay loader starts at.
+- Standard C headers and `printf` work as usual; `\n` is the normal C newline escape.
+
+**Compile and run:**
+
+```sh
+besmc hello.c
+./hello.exe
+```
+
+This requires `cpp`, `b6parse`, `b6lower`, and `b6codegen` on your `$PATH`.
+
+**Compiler listing excerpt** (`hello.lst`):
+
+```text
+...
+ ДЛИHA БИБЛИOTEKИ  003 03
+```
+
+**Program output:**
+
+```text
+HELLO, C!
+```
+
+---
+
 ## Object modules — `stdarray.std`
 
 This file is the binary "standard array" format that routines are translated into

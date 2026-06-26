@@ -27,5 +27,12 @@ jobs:
         install -v pascal-re/pascompl /usr/local/bin/pascompl
     - name: Build
       run: cargo build --verbose
+    - name: Install besmc
+      run: install -v target/debug/besmc /usr/local/bin/besmc
+    - name: C compiler
+      run: >-
+        git clone https://github.com/besm6/c-compiler.git &&
+        make -C c-compiler &&
+        cmake --install c-compiler/build --prefix /usr/local
     - name: Run tests
       run: cargo test --verbose -- --test-threads=1

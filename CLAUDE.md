@@ -55,7 +55,11 @@ All compilation logic lives in `compile_files()`:
 **Object file limit**: At most 16 object files can be linked (perso devices 040–057 octal).
 
 ### [tests/tests.cpp](tests/tests.cpp)
-Single sequential test harness covering CLI parsing, per-language `.exe`/`.obj` builds, negative cases, Pascal→Fortran linking, and `*.std` input. C tests are skipped when `b6parse` is not on `$PATH`.
+Single sequential test harness covering CLI parsing, per-language `.exe`/`.obj` builds, negative cases, Pascal→Fortran linking, and `*.std` input.
+
+External tools are probed up front rather than discovered by a failing `exec`:
+- `dubna` missing — every test needs it, so the harness prints the tool and where to get it, then exits 1 after the CLI-parsing tests.
+- `pascompl` (the `.pas` test) or the C chain `cpp`/`b6parse`/`b6lower`/`b6codegen` (the `.c` tests) missing — just those tests are skipped with a `SKIP` line naming each absent tool, and the count appears in the summary (`N passed, N failed, N skipped`).
 
 ## File Extensions and Language Mapping
 

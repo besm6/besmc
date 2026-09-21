@@ -12,6 +12,7 @@ namespace fs = std::filesystem;
 
 static int g_failed = 0;
 static int g_passed = 0;
+static int g_skipped = 0;
 
 #define CHECK(cond) do { \
     if (!(cond)) { \
@@ -53,6 +54,54 @@ static void expect_fail(const Options& opt) {
 static void write_file(const std::string& path, const std::string& contents) {
     fs::create_directories(fs::path(path).parent_path());
     std::ofstream(path) << contents;
+}
+
+// ---- external tools ----
+
+// An external program the tests shell out to, plus where one gets it.
+struct Tool {
+    const char* name;
+    const char* source;
+};
+
+// dubna runs every compilation; without it no test can pass.
+static const Tool simulator[] = {
+    { "dubna", "BESM-6 simulator: https://github.com/besm6/dubna" },
+};
+// Needed only by the *.pas test.
+static const Tool pascal_tools[] = {
+    { "pascompl", "Pascal-re compiler: https://github.com/besm6/pascal-re" },
+};
+// Needed only by the *.c tests.
+static const Tool c_tools[] = {
+    { "cpp", "C preprocessor, from gcc or clang" },
+    { "b6parse", "BESM-6 C compiler: https://github.com/besm6/c-compiler" },
+    { "b6lower", "BESM-6 C compiler: https://github.com/besm6/c-compiler" },
+    { "b6codegen", "BESM-6 C compiler: https://github.com/besm6/c-compiler" },
+};
+
+static bool on_path(const char* name) {
+    return std::system(("command -v " + std::string(name) + " >/dev/null 2>&1").c_str()) == 0;
+}
+
+template <std::size_t N>
+static std::vector<const Tool*> missing(const Tool (&tools)[N]) {
+    std::vector<const Tool*> gone;
+    for (auto& t : tools)
+        if (!on_path(t.name)) gone.push_back(&t);
+    return gone;
+}
+
+static void list_tools(const std::vector<const Tool*>& gone) {
+    for (auto* t : gone) std::cerr << "    " << t->name << " — " << t->source << '\n';
+}
+
+// Report tests we cannot run, and count them, instead of dying inside compile_files().
+static void skip(const char* what, const std::vector<const Tool*>& gone, int count) {
+    std::cerr << "SKIP " << what << " (" << count << " test" << (count == 1 ? "" : "s")
+              << ") — not installed:\n";
+    list_tools(gone);
+    g_skipped += count;
 }
 
 // ---- options ----
@@ -132,6 +181,16 @@ int main() {
     test_output_and_ftn_files();
     test_mixed_file_types();
 
+    // Everything below shells out to dubna; bail out with an explicit message
+    // rather than letting compile_files() throw "dubna failed with status: 127".
+    if (auto gone = missing(simulator); !gone.empty()) {
+        std::cerr << "\nERROR: required external tool not installed:\n";
+        list_tools(gone);
+        std::cerr << "Install it and re-run 'make test'.\n";
+        std::cout << g_passed << " passed, " << g_failed << " failed\n";
+        return 1;
+    }
+
     test_exe("examples/hello.b",       "target/hello_b.exe",       "  001 30");
     test_exe("examples/hello.algol",   "target/hello_algol.exe",   "  001 17");
     test_exe("examples/hello.assem",   "target/hello_assem.exe",   "  001 01");
@@ -141,14 +200,17 @@ int main() {
     test_exe("examples/hello.ftn",     "target/hello_ftn.exe",     "  002 30");
     test_exe("examples/hello.madlen",  "target/hello_madlen.exe",  "  001 01");
     test_exe("examples/hello.pascal",  "target/hello_pascal.exe",  "  002 17");
-    test_exe("examples/hello.pas",     "target/hello_pas.exe",     "  002 17");
 
-    // C tests need b6 toolchain; skip if unavailable
-    if (std::system("command -v b6parse >/dev/null 2>&1") == 0) {
+    if (auto gone = missing(pascal_tools); gone.empty())
+        test_exe("examples/hello.pas", "target/hello_pas.exe", "  002 17");
+    else
+        skip("Pascal-re", gone, 1);
+
+    if (auto gone = missing(c_tools); gone.empty()) {
         test_exe("examples/hello.c", "target/hello_c.exe", "  003 03");
         test_obj("examples/hello.c", "target/lib_c.obj");
     } else {
-        std::cerr << "skip C tests (b6parse not on PATH)\n";
+        skip("C", gone, 2);
     }
 
     test_obj("examples/hello.algol",   "target/lib_algol.obj");
@@ -253,6 +315,8 @@ int main() {
     neg_obj("program main(output);\n_(\n    a = 123;\n    stop;\n_).\n",
             "target/obj_pascal_undefined_variable.pascal");
 
-    std::cout << g_passed << " passed, " << g_failed << " failed\n";
+    std::cout << g_passed << " passed, " << g_failed << " failed";
+    if (g_skipped) std::cout << ", " << g_skipped << " skipped";
+    std::cout << '\n';
     return g_failed ? 1 : 0;
 }

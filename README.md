@@ -36,8 +36,8 @@ Before you can use `besmc` you need these installed:
    The `dubna` command must be on your `$PATH`. This is the engine that actually runs the
    BESM-6 compilers and your compiled programs, so it is required at all times.
 
-2. **The Rust compiler** — needed only to build `besmc` itself.
-   Install it from [rust-lang.org/tools/install](https://www.rust-lang.org/tools/install).
+2. **A C++20 compiler** — needed only to build `besmc` itself
+   (`g++` 10+ or `clang++` 11+).
 
 3. **`pascompl`** — *only* needed if you compile `.pas` (Pascal-re) files. If you never use
    the `.pas` extension you can skip this one. It must also be on your `$PATH`.
@@ -63,13 +63,13 @@ make
 make install
 ```
 
-The `besmc` binary is installed to `~/.cargo/bin/besmc`.
+The `besmc` binary is installed to `~/.local/bin/besmc`.
 
 **If you later type `besmc` and see `command not found`**, that directory is not on your
 `$PATH`. Add it once:
 
 ```sh
-export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 ```
 
 To make it permanent, add that same line to the end of your shell's startup file —
@@ -209,7 +209,7 @@ HELLO FORTRAN FROM PASCAL!
 | Message you see | What it means and how to fix it |
 | --- | --- |
 | `dubna: command not found` | The dubna simulator is not installed or not on your `$PATH`. Install it from [github.com/besm6/dubna](https://github.com/besm6/dubna/) and make sure the `dubna` command works in your terminal. |
-| `besmc: command not found` | The `besmc` binary is not on your `$PATH`. Add `~/.cargo/bin` to it — see [Build and Install](#build-and-install). |
+| `besmc: command not found` | The `besmc` binary is not on your `$PATH`. Add `~/.local/bin` to it — see [Build and Install](#build-and-install). |
 | `Failed to execute pascompl` | You are compiling a `.pas` file but `pascompl` is not installed. Install it and put it on your `$PATH`, or use the `.pascal` extension instead, which does not need it. |
 | `Failed to execute cpp` / `b6parse` / `b6lower` / `b6codegen` | You are compiling a `.c` file but part of the C toolchain is missing. Install the BESM-6 C compiler passes and make sure `cpp`, `b6parse`, `b6lower`, and `b6codegen` are all on your `$PATH`. |
 | `BESM-6 C headers not found` / `BESM-6 libc.bin not found` | The BESM-6 C support files are not installed. Put the headers in `<prefix>/share/besm6/include/` and the library in `<prefix>/share/besm6/lib/libc.bin`, where `<prefix>` is `~/.local`, `/usr/local`, or `/usr`. |
@@ -230,9 +230,5 @@ make test
 You should see all tests pass:
 
 ```text
-running 52 tests
-test test::test_exe::test_pascal_exe ... ok
-test test::test_exe::test_fortran_exe ... ok
-...
-test result: ok. 51 passed; 0 failed; 0 ignored
+64 passed, 0 failed
 ```

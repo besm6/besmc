@@ -1,9 +1,8 @@
-Cargo.lock
-target
+build
 .DS_Store
-*.rs-
-*.dub-
 *.exe
 *.lst
 *.obj
 *.bin
+*.dub
+target/

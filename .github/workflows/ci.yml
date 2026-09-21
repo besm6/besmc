@@ -1,4 +1,4 @@
-name: Rust
+name: CI
 
 on:
   push:
@@ -6,33 +6,35 @@ on:
   pull_request:
     branches: [ "main" ]
 
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Dubna
       run: >-
         git clone https://github.com/besm6/dubna.git &&
         make -C dubna install
+
     - name: Pascompl
       run: >-
         git clone https://github.com/besm6/pascal-re.git &&
         make -C pascal-re pascompl &&
         install -v pascal-re/pascompl /usr/local/bin/pascompl
+
     - name: Build
-      run: cargo build --verbose
+      run: make
+
     - name: Install besmc
-      run: install -v target/debug/besmc /usr/local/bin/besmc
+      run: sudo install -v build/besmc /usr/local/bin/besmc
+
     - name: C compiler
       run: >-
         git clone https://github.com/besm6/c-compiler.git &&
         make -C c-compiler &&
         cmake --install c-compiler/build --prefix $HOME/.local
+
     - name: Run tests
-      run: cargo test --verbose -- --test-threads=1
+      run: make test
